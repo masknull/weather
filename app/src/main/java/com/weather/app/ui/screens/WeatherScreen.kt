@@ -68,18 +68,19 @@ fun WeatherScreen(viewModel: WeatherViewModel, onSearchClick: () -> Unit) {
     HorizontalPager(
         state = pagerState,
         modifier = Modifier.fillMaxSize()
-    ) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(gradient)
-    ) {
-        when (val state = uiState) {
-            is WeatherUiState.Idle -> IdleContent(viewModel)
-            is WeatherUiState.Loading -> LoadingContent()
-            is WeatherUiState.SuccessXiaomi -> XiaomiSuccessContent(state, viewModel, onSearchClick)
-            is WeatherUiState.Success -> LegacySuccessContent(state, viewModel, onSearchClick)
-            is WeatherUiState.Error -> ErrorContent(state.message) { viewModel.retry() }
+    ) { _ ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(gradient)
+        ) {
+            when (val state = uiState) {
+                is WeatherUiState.Idle -> IdleContent(viewModel)
+                is WeatherUiState.Loading -> LoadingContent()
+                is WeatherUiState.SuccessXiaomi -> XiaomiSuccessContent(state, viewModel, onSearchClick)
+                is WeatherUiState.Success -> LegacySuccessContent(state, viewModel, onSearchClick)
+                is WeatherUiState.Error -> ErrorContent(state.message) { viewModel.retry() }
+            }
         }
     }
 }
