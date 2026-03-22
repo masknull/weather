@@ -103,11 +103,12 @@ private fun XiaomiSuccessContent(
     val scrollState = rememberScrollState()
 
     val current = state.weather.current
-    val hourly = state.weather.forecastHourly?.data.orEmpty().take(24)
-    val daily = state.weather.forecastDaily?.data.orEmpty().take(7)
+    val hourlySeriesTemp = state.weather.forecastHourly?.temperature
+    val hourlySeriesWeather = state.weather.forecastHourly?.weather
+
     val aqi = state.weather.aqi?.aqi
     val alerts = state.weather.alerts.orEmpty()
-    val indices = state.weather.indices?.data.orEmpty()
+    val indices = state.weather.indices?.indices.orEmpty()
 
     Column(
         modifier = Modifier
@@ -154,21 +155,25 @@ private fun XiaomiSuccessContent(
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             StatTile("体感", (current?.feelsLike?.value ?: "--") + "°", "🌡️", Modifier.weight(1f))
             StatTile("湿度", (current?.humidity?.value ?: "--") + "%", "💧", Modifier.weight(1f))
-            StatTile("风速", (current?.windSpeed?.value ?: "--") + (current?.windSpeed?.unit ?: ""), "💨", Modifier.weight(1f))
+            StatTile("风速", (current?.wind?.speed?.value ?: "--") + (current?.wind?.speed?.unit ?: ""), "💨", Modifier.weight(1f))
         }
 
         Spacer(Modifier.height(12.dp))
 
-        if (hourly.isNotEmpty()) {
+        val hTimes = hourlySeriesTemp?.time.orEmpty()
+        val hTemps = hourlySeriesTemp?.value.orEmpty()
+        val hWeathers = hourlySeriesWeather?.value.orEmpty()
+        if (hTimes.isNotEmpty() && hTemps.isNotEmpty()) {
             GlassCard(Modifier.fillMaxWidth()) {
                 Text("24小时预报", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Medium)
                 Spacer(Modifier.height(12.dp))
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                    items(hourly) { h ->
+                    val count = minOf(24, hTimes.size, hTemps.size)
+                    items(count) { idx ->
                         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(h.time ?: "", color = TextSecondary, fontSize = 12.sp)
-                            Text(weatherEmojiFromText(h.weather), fontSize = 22.sp)
-                            Text((h.temperature?.value ?: "--") + "°", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                            Text(hTimes.getOrNull(idx) ?: "", color = TextSecondary, fontSize = 12.sp)
+                            Text(weatherEmojiFromText(hWeathers.getOrNull(idx)), fontSize = 22.sp)
+                            Text((hTemps.getOrNull(idx) ?: "--") + "°", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium)
                         }
                     }
                 }
@@ -176,16 +181,18 @@ private fun XiaomiSuccessContent(
             Spacer(Modifier.height(12.dp))
         }
 
-        if (daily.isNotEmpty()) {
+        // Daily: 小米返回是 series 结构，beta 先把 temperature.time/value 原样展示（后续再拆 min/max）
+        val dTimes = state.weather.forecastDaily?.temperature?.time.orEmpty()
+        val dTemps = state.weather.forecastDaily?.temperature?.value.orEmpty()
+        if (dTimes.isNotEmpty() && dTemps.isNotEmpty()) {
             GlassCard(Modifier.fillMaxWidth()) {
-                Text("未来7天", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                Text("未来几天", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Medium)
                 Spacer(Modifier.height(8.dp))
-                daily.forEach { d ->
+                val count = minOf(7, dTimes.size, dTemps.size)
+                for (i in 0 until count) {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Text(d.date ?: "", color = TextSecondary, modifier = Modifier.weight(1f))
-                        Text(weatherEmojiFromText(d.weather), fontSize = 18.sp)
-                        Spacer(Modifier.width(8.dp))
-                        Text((d.tempMin?.value ?: "--") + "°~" + (d.tempMax?.value ?: "--") + "°", color = Color.White)
+                        Text(dTimes.getOrNull(i) ?: "", color = TextSecondary, modifier = Modifier.weight(1f))
+                        Text((dTemps.getOrNull(i) ?: "--") + "°", color = Color.White)
                     }
                     Spacer(Modifier.height(6.dp))
                 }

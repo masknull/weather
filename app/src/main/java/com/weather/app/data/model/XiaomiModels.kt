@@ -1,6 +1,5 @@
 package com.weather.app.data.model
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -15,16 +14,10 @@ data class XiaomiWeatherResponse(
 )
 
 @Serializable
-sealed class XiaomiValue {
-    abstract val value: String?
-    abstract val unit: String?
-}
-
-@Serializable
 data class XiaomiUnitValue(
-    override val unit: String? = null,
-    override val value: String? = null,
-) : XiaomiValue()
+    val unit: String? = null,
+    val value: String? = null,
+)
 
 @Serializable
 data class XiaomiCurrent(
@@ -32,33 +25,46 @@ data class XiaomiCurrent(
     val feelsLike: XiaomiUnitValue? = null,
     val humidity: XiaomiUnitValue? = null,
     val weather: String? = null,
-    val windDirection: String? = null,
-    val windSpeed: XiaomiUnitValue? = null,
+    val wind: XiaomiWind? = null,
 )
+
+@Serializable
+data class XiaomiWind(
+    val direction: XiaomiUnitValue? = null,
+    val speed: XiaomiUnitValue? = null,
+)
+
+// Xiaomi hourly/daily payloads are nested by metric arrays, not list-of-items.
 
 @Serializable
 data class XiaomiForecastHourly(
-    val data: List<XiaomiHourlyItem>? = null,
-)
-
-@Serializable
-data class XiaomiHourlyItem(
-    val time: String? = null,
-    val weather: String? = null,
-    val temperature: XiaomiUnitValue? = null,
+    val status: String? = null,
+    val temperature: XiaomiSeries? = null,
+    val weather: XiaomiSeries? = null,
+    val aqi: XiaomiSeries? = null,
+    val wind: XiaomiSeries? = null,
+    val precipitationProbability: XiaomiSeries? = null,
+    val desc: String? = null,
 )
 
 @Serializable
 data class XiaomiForecastDaily(
-    val data: List<XiaomiDailyItem>? = null,
+    val status: String? = null,
+    val temperature: XiaomiSeries? = null,
+    val weather: XiaomiSeries? = null,
+    val aqi: XiaomiSeries? = null,
+    val wind: XiaomiSeries? = null,
+    val precipitationProbability: XiaomiSeries? = null,
+    val pubTime: String? = null,
 )
 
 @Serializable
-data class XiaomiDailyItem(
-    val date: String? = null,
-    val weather: String? = null,
-    val tempMax: XiaomiUnitValue? = null,
-    val tempMin: XiaomiUnitValue? = null,
+data class XiaomiSeries(
+    val status: String? = null,
+    val unit: String? = null,
+    val time: List<String>? = null,
+    val value: List<String>? = null,
+    val from: String? = null,
 )
 
 @Serializable
@@ -81,7 +87,7 @@ data class XiaomiAlert(
 
 @Serializable
 data class XiaomiIndices(
-    val data: List<XiaomiIndexItem>? = null,
+    val indices: List<XiaomiIndexItem>? = null,
 )
 
 @Serializable
