@@ -251,11 +251,34 @@ private fun XiaomiSuccessContent(
             fontWeight = FontWeight.Thin,
             lineHeight = 100.sp
         )
-        Text(
-            text = xiaomiWeatherDesc(current?.weather),
-            color = TextSecondary,
-            fontSize = 20.sp
-        )
+        // 天气 最高温 最低温 AQI 一行
+        val todayHigh = state.weather.forecastDaily?.temperature?.value?.firstOrNull()?.from ?: "--"
+        val todayLow = state.weather.forecastDaily?.temperature?.value?.firstOrNull()?.to ?: "--"
+        val aqiVal = aqi?.aqi?.toIntOrNull()
+        val aqiLabel = when {
+            aqiVal == null -> ""
+            aqiVal <= 50 -> "优"
+            aqiVal <= 100 -> "良"
+            aqiVal <= 150 -> "轻度"
+            aqiVal <= 200 -> "中度"
+            aqiVal <= 300 -> "重度"
+            else -> "严重"
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(xiaomiWeatherDesc(current?.weather), color = TextSecondary, fontSize = 16.sp)
+            Text("${todayHigh}°↑", color = Color(0xFFFFD54F), fontSize = 15.sp)
+            Text("${todayLow}°↓", color = Color(0xFF90CAF9), fontSize = 15.sp)
+            if (aqiVal != null) Text("AQI $aqiVal $aqiLabel", color = when {
+                aqiVal <= 50 -> Color(0xFF66BB6A)
+                aqiVal <= 100 -> Color(0xFFFFCA28)
+                aqiVal <= 150 -> Color(0xFFFFA726)
+                aqiVal <= 200 -> Color(0xFFEF5350)
+                else -> Color(0xFFAB47BC)
+            }, fontSize = 13.sp)
+        }
 
         Spacer(Modifier.height(16.dp))
 
