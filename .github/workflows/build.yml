@@ -7,6 +7,9 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+env:
+  APP_VERSION_NAME: "1.0.0"
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -75,14 +78,21 @@ jobs:
           path: app/build/outputs/apk/release/*arm64*.apk
           if-no-files-found: error
 
-      - name: Create Release
+      - name: Create Release (SemVer)
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ github.run_number }}
-          name: "Weather v${{ github.run_number }}"
-          files: app/build/outputs/apk/release/*arm64*.apk
+          tag_name: v${{ env.APP_VERSION_NAME }}
+          name: "天气 v${{ env.APP_VERSION_NAME }}"
+          files: app/build/outputs/apk/release/Weather-arm64-v8a.apk
           generate_release_notes: false
-          body: "Automated build."
+          body: |
+            更新内容（v${{ env.APP_VERSION_NAME }}）
+            - 初始化版本：入口页（定位/选城市）
+            - 城市搜索：中文+县/市/区容错
+            - 自动定位：超时兜底，不再无限转圈
+            
+            已知问题
+            - 部分文案仍为英文（下一版修）
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
