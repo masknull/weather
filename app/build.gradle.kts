@@ -20,7 +20,7 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = true
+            isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -65,13 +65,14 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.kotlinx.coroutines.android)
-    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.kotlinx.coroutines.play.services)
+    implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.android)
     implementation(libs.ktor.client.content.negotiation)
-    implementation(libs.ktor.serialization.kotlinx.json)
     implementation(libs.ktor.client.logging)
+    implementation(libs.ktor.serialization.kotlinx.json)
+    implementation(libs.kotlinx.serialization.json)
     implementation(libs.play.services.location)
-    implementation(libs.accompanist.permissions)
     debugImplementation(libs.androidx.ui.tooling)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

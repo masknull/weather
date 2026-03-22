@@ -9,7 +9,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.animation.*
 import androidx.compose.runtime.*
-import androidx.core.splashscreen.splashScreen
 import com.weather.app.ui.screens.SearchScreen
 import com.weather.app.ui.screens.WeatherScreen
 import com.weather.app.ui.theme.WeatherTheme
@@ -31,14 +30,18 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        viewModel.setLocationPermissionLauncher { permissions ->
-            locationPermissionLauncher.launch(permissions)
+        viewModel.setLocationPermissionLauncher {
+            locationPermissionLauncher.launch(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+            )
         }
 
         setContent {
             WeatherTheme {
                 var showSearch by remember { mutableStateOf(false) }
-
                 AnimatedContent(
                     targetState = showSearch,
                     transitionSpec = {
@@ -48,9 +51,9 @@ class MainActivity : ComponentActivity() {
                             slideInHorizontally { -it } togetherWith slideOutHorizontally { it }
                         }
                     },
-                    label = "nav"
-                ) { inSearch ->
-                    if (inSearch) {
+                    label = "screen_transition"
+                ) { isSearch ->
+                    if (isSearch) {
                         SearchScreen(
                             viewModel = viewModel,
                             onBack = { showSearch = false }
