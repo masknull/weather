@@ -117,9 +117,6 @@ fun WeatherScreen(viewModel: WeatherViewModel, onSearchClick: () -> Unit) {
 
     val gradient = Brush.verticalGradient(listOf(Color(0xFF1C8DFF), Color(0xFF5BC8FA)))
 
-    val currentPagerCity = pagerCities.getOrNull(pagerState.settledPage)
-    val pageState = currentPagerCity?.let { cityStates["${String.format("%.4f", it.latitude)},${String.format("%.4f", it.longitude)},${it.name}"] } ?: uiState
-
     HorizontalPager(
         state = pagerState,
         key = { page -> pagerCities.getOrNull(page)?.id ?: page },
@@ -134,6 +131,11 @@ fun WeatherScreen(viewModel: WeatherViewModel, onSearchClick: () -> Unit) {
             snapVelocityThreshold = 100.dp
         )
     ) { page ->
+        val pageCity = pagerCities.getOrNull(page)
+        val pageState = pageCity?.let { city ->
+            cityStates["${String.format("%.4f", city.latitude)},${String.format("%.4f", city.longitude)},${city.name}"]
+        } ?: if (page == pagerState.settledPage) uiState else WeatherUiState.Idle
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -153,7 +155,7 @@ fun WeatherScreen(viewModel: WeatherViewModel, onSearchClick: () -> Unit) {
                 when (state) {
                     is WeatherUiState.Idle -> IdleContent(viewModel)
                     is WeatherUiState.Loading -> LoadingContent()
-                    is WeatherUiState.SuccessXiaomi -> XiaomiSuccessContent(state, viewModel, onSearchClick, pagerCities, pagerState.settledPage, pagerState.currentPageOffsetFraction)
+                    is WeatherUiState.SuccessXiaomi -> XiaomiSuccessContent(state, viewModel, onSearchClick, pagerCities, page, pagerState.currentPageOffsetFraction)
                     is WeatherUiState.Success -> LegacySuccessContent(state, viewModel, onSearchClick, savedCities)
                     is WeatherUiState.Error -> ErrorContent(state.message) { viewModel.retry() }
                 }
