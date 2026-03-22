@@ -99,7 +99,9 @@ class MainActivity : ComponentActivity() {
                 }
 
                 LaunchedEffect(uiState) {
-                    if (uiState is com.weather.app.viewmodel.WeatherUiState.Success) {
+                    if (uiState is com.weather.app.viewmodel.WeatherUiState.Success ||
+                        uiState is com.weather.app.viewmodel.WeatherUiState.SuccessXiaomi
+                    ) {
                         route = "weather"
                     }
                 }

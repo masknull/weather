@@ -21,6 +21,11 @@ sealed interface WeatherUiState {
         val cityName: String,
         val forecast: ForecastResponse
     ) : WeatherUiState
+
+    data class SuccessXiaomi(
+        val cityName: String,
+        val weather: XiaomiWeatherResponse
+    ) : WeatherUiState
     data class Error(val message: String) : WeatherUiState
 }
 
@@ -191,9 +196,9 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
 
     private suspend fun loadWeather(lat: Double, lon: Double, name: String) {
         _uiState.value = WeatherUiState.Loading
-        repo.getForecast(lat, lon).fold(
-            onSuccess = { _uiState.value = WeatherUiState.Success(name, it) },
-            onFailure = { _uiState.value = WeatherUiState.Error(it.message ?: "Unknown error") }
+        repo.getXiaomiWeather(lat, lon).fold(
+            onSuccess = { _uiState.value = WeatherUiState.SuccessXiaomi(name, it) },
+            onFailure = { _uiState.value = WeatherUiState.Error(it.message ?: "网络请求失败") }
         )
     }
 }

@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.weather.app.data.model.*
 import com.weather.app.data.remote.WeatherApi
+import com.weather.app.data.remote.XiaomiWeatherApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.encodeToString
@@ -32,8 +33,8 @@ class WeatherRepository(private val context: Context) {
         WeatherApi.searchCity(query).results ?: emptyList()
     }
 
-    suspend fun getForecast(lat: Double, lon: Double): Result<ForecastResponse> = runCatching {
-        WeatherApi.getForecast(lat, lon)
+    suspend fun getXiaomiWeather(lat: Double, lon: Double): Result<XiaomiWeatherResponse> = runCatching {
+        XiaomiWeatherApi.getAll(lat, lon)
     }
 
     // ── Persistence ───────────────────────────────────────────────────────

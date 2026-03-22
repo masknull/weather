@@ -32,7 +32,7 @@ import java.util.Locale
 fun WeatherScreen(viewModel: WeatherViewModel, onSearchClick: () -> Unit) {
     val uiState by viewModel.uiState.collectAsState()
     val gradient = when (val s = uiState) {
-        is WeatherUiState.Success -> skyGradient(
+        is WeatherUiState.Success, is WeatherUiState.SuccessXiaomi -> skyGradient(
             s.forecast.current.weatherCode,
             s.forecast.current.isDay == 1
         )
@@ -47,7 +47,7 @@ fun WeatherScreen(viewModel: WeatherViewModel, onSearchClick: () -> Unit) {
         when (val state = uiState) {
             is WeatherUiState.Idle -> IdleContent(viewModel)
             is WeatherUiState.Loading -> LoadingContent()
-            is WeatherUiState.Success -> SuccessContent(state, viewModel, onSearchClick)
+            is WeatherUiState.Success, is WeatherUiState.SuccessXiaomi -> SuccessContent(state, viewModel, onSearchClick)
             is WeatherUiState.Error -> ErrorContent(state.message) { viewModel.retry() }
         }
     }
@@ -98,7 +98,24 @@ fun ErrorContent(message: String, onRetry: () -> Unit) {
 }
 
 @Composable
-fun SuccessContent(state: WeatherUiState.Success, viewModel: WeatherViewModel, onSearchClick: () -> Unit) {
+fun SuccessContent(state: WeatherUiState, viewModel: WeatherViewModel, onSearchClick: () -> Unit) {
+    // Normalize data model: Open-Meteo vs Xiaomi
+    val cityName = when (state) {
+        is WeatherUiState.Success -> state.cityName
+        is WeatherUiState.SuccessXiaomi -> state.cityName
+        else -> ""
+    }
+    val tempText = when (state) {
+        is WeatherUiState.Success -> "${state.forecast.current.temperature.toInt()}°"
+        is WeatherUiState.SuccessXiaomi -> ((state.weather.current?.temperature ?: "--") + "°")
+        else -> "--"
+    }
+    val descText = when (state) {
+        is WeatherUiState.Success -> weatherDescription(state.forecast.current.weatherCode)
+        is WeatherUiState.SuccessXiaomi -> (state.weather.current?.weather ?: "")
+        else -> ""
+    }
+
     val scrollState = rememberScrollState()
     Column(
         modifier = Modifier
@@ -112,7 +129,7 @@ fun SuccessContent(state: WeatherUiState.Success, viewModel: WeatherViewModel, o
         // City name
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = state.cityName,
+                text = cityName,
                 color = Color.White,
                 fontSize = 28.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -128,14 +145,14 @@ fun SuccessContent(state: WeatherUiState.Success, viewModel: WeatherViewModel, o
 
         // Big temperature
         Text(
-            text = "${state.forecast.current.temperature.toInt()}°",
+            text = tempText,
             color = Color.White,
             fontSize = 96.sp,
             fontWeight = FontWeight.Thin,
             lineHeight = 100.sp
         )
         Text(
-            text = weatherDescription(state.forecast.current.weatherCode),
+            text = descText,
             color = TextSecondary,
             fontSize = 20.sp
         )
