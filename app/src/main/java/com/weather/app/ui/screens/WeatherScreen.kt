@@ -80,7 +80,8 @@ fun WeatherScreen(viewModel: WeatherViewModel, onSearchClick: () -> Unit) {
         pageSpacing = 0.dp,
         flingBehavior = PagerDefaults.flingBehavior(
             state = pagerState,
-            snapAnimationSpec = spring(dampingRatio = 0.8f, stiffness = 300f)
+            snapAnimationSpec = spring(dampingRatio = 0.85f, stiffness = 150f),
+            snapPositionalThreshold = 0.15f
         )
     ) { _ ->
         Box(
@@ -234,7 +235,7 @@ private fun XiaomiSuccessContent(
             StatTile("湿度", (current?.humidity?.value ?: "--") + "%", "💧", Modifier.weight(1f))
             val sunrise = state.weather.forecastDaily?.sunRiseSet?.value?.firstOrNull()?.from?.substringAfter("T")?.take(5) ?: "--"
             val sunset = state.weather.forecastDaily?.sunRiseSet?.value?.firstOrNull()?.to?.substringAfter("T")?.take(5) ?: "--"
-            StatTile("日出日落", "$sunrise/$sunset", "🌅", Modifier.weight(1f))
+            StatTile("日出日落", "$sunrise/$sunset", "🌅", Modifier.weight(1f), valueSize = 13)
         }
 
         Spacer(Modifier.height(12.dp))

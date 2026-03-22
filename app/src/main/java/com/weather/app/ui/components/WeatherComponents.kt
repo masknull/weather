@@ -84,10 +84,10 @@ fun skyGradient(weatherCode: Int, isDay: Boolean): Brush {
 // ── Stat tile ────────────────────────────────────────────────────────────────
 
 @Composable
-fun StatTile(label: String, value: String, icon: String, modifier: Modifier = Modifier) {
+fun StatTile(label: String, value: String, icon: String, modifier: Modifier = Modifier, valueSize: Int = 22) {
     GlassCard(modifier = modifier) {
         Text(text = "$icon  $label", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Medium)
         Spacer(Modifier.height(6.dp))
-        Text(text = value, color = TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
+        Text(text = value, color = TextPrimary, fontSize = valueSize.sp, fontWeight = FontWeight.SemiBold)
     }
 }
