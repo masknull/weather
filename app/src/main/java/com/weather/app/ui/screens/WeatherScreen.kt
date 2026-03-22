@@ -207,32 +207,29 @@ private fun XiaomiSuccessContent(
     ) {
         Spacer(Modifier.height(16.dp))
 
-        // 城市名头部：当前居中，左右各1个收藏城市（小+透明）
+        // 城市名头部：左城市名区域（左/中/右）+ 右侧按钮
         val allCityNames = listOf("我的位置") + savedCities.map { it.name }
         val curPage = currentPage
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-            // 左侧城市
-            val leftName = if (curPage > 0) allCityNames.getOrNull(curPage - 1)?.split(",")?.first()?.split("，")?.first() else null
-            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
-                if (leftName != null) {
-                    Text(text = leftName, color = Color.White.copy(alpha = 0.4f), fontSize = 13.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+            // 城市名区域（占满剩余空间）
+            Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+                val leftName = if (curPage > 0) allCityNames.getOrNull(curPage - 1)?.split(",")?.first()?.split("，")?.first() else null
+                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+                    if (leftName != null) Text(text = leftName, color = Color.White.copy(alpha = 0.4f), fontSize = 12.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                }
+                Text(
+                    text = state.cityName.split(" ").first().split(",").first().split("，").first(),
+                    color = Color.White,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1
+                )
+                val rightName = allCityNames.getOrNull(curPage + 1)?.split(",")?.first()?.split("，")?.first()
+                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
+                    if (rightName != null) Text(text = rightName, color = Color.White.copy(alpha = 0.4f), fontSize = 12.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                 }
             }
-            // 当前城市（居中）
-            Text(
-                text = state.cityName.split(" ").first().split(",").first().split("，").first(),
-                color = Color.White,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1
-            )
-            // 右侧城市
-            val rightName = allCityNames.getOrNull(curPage + 1)?.split(",")?.first()?.split("，")?.first()
-            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
-                if (rightName != null) {
-                    Text(text = rightName, color = Color.White.copy(alpha = 0.4f), fontSize = 13.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-                }
-            }
+            // 按钮区域（固定右侧）
             val isSaved = savedCities.any { it.name == state.cityName }
             IconButton(onClick = { if (isSaved) viewModel.removeSavedCity(state.cityName.hashCode().toLong()) else viewModel.saveCurrentCity() }) {
                 Icon(if (isSaved) Icons.Default.Bookmark else Icons.Default.BookmarkBorder, contentDescription = if (isSaved) "已收藏" else "收藏", tint = Color.White)
