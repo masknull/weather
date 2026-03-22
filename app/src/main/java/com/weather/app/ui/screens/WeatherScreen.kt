@@ -208,8 +208,8 @@ private fun XiaomiSuccessContent(
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             StatTile("体感", (current?.feelsLike?.value ?: "--") + "°", "🌡️", Modifier.weight(1f))
             StatTile("风速", (current?.wind?.speed?.value ?: "--") + (current?.wind?.speed?.unit ?: ""), "💨", Modifier.weight(1f))
-            val sunrise = state.weather.forecastDaily?.sunRiseSet?.value?.firstOrNull()?.from?.take(5) ?: "--"
-            val sunset = state.weather.forecastDaily?.sunRiseSet?.value?.firstOrNull()?.to?.take(5) ?: "--"
+            val sunrise = state.weather.forecastDaily?.sunRiseSet?.value?.firstOrNull()?.from?.substringAfter("T")?.take(5) ?: "--"
+            val sunset = state.weather.forecastDaily?.sunRiseSet?.value?.firstOrNull()?.to?.substringAfter("T")?.take(5) ?: "--"
             StatTile("日出日落", "$sunrise/$sunset", "🌅", Modifier.weight(1f))
         }
         Spacer(Modifier.height(4.dp))
@@ -271,7 +271,7 @@ private fun XiaomiSuccessContent(
                                 cal.add(java.util.Calendar.DAY_OF_YEAR, i)
                                 val dow = arrayOf("日","一","二","三","四","五","六")[cal.get(java.util.Calendar.DAY_OF_WEEK) - 1]
                                 val day = cal.get(java.util.Calendar.DAY_OF_MONTH)
-                                "周$dow ${day}号"
+                                "${day}号"
                             }
                         }
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
