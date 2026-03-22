@@ -80,13 +80,26 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
     }
 
     @SuppressLint("MissingPermission")
+    fun requestOrFetchCurrentLocation() {
+        if (!_permissionGranted.value) {
+            requestLocationPermission()
+            return
+        }
+        fetchCurrentLocationInternal()
+    }
+
     fun fetchCurrentLocation() {
+        // keep old API but make it safe on HyperOS revoke
+        requestOrFetchCurrentLocation()
+    }
+
+    private fun fetchCurrentLocationInternal() {
         viewModelScope.launch {
             _uiState.value = WeatherUiState.Loading
             try {
                 // Hard timeout to avoid endless spinner
                 val cts = CancellationTokenSource()
-                val location = kotlinx.coroutines.withTimeoutOrNull(8000) {
+                val location = kotlinx.coroutines.withTimeoutOrNull(4000) {
                     fusedLocation.getCurrentLocation(
                         Priority.PRIORITY_BALANCED_POWER_ACCURACY,
                         cts.token
