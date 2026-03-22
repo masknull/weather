@@ -90,7 +90,7 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
     fun loadCity(lat: Double, lon: Double, name: String) {
         viewModelScope.launch {
             loadWeather(lat, lon, name)
-            repo.saveLastCity(name, lat, lon)
+            repo.saveLastLocation(lat, lon, name)
         }
     }
 
@@ -106,18 +106,23 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
         val state = _uiState.value
         if (state is WeatherUiState.Success) {
             viewModelScope.launch {
-                repo.addSavedCity(SavedCity(
-                    id = state.cityName.hashCode().toLong(),
-                    name = state.cityName,
-                    lat = 0.0,
-                    lon = 0.0
-                ))
+                // NOTE: placeholder save for now; proper city saving will be wired from Search results
+                repo.saveCity(
+                    SavedCity(
+                        id = state.cityName.hashCode().toLong(),
+                        name = state.cityName,
+                        region = null,
+                        country = null,
+                        latitude = 0.0,
+                        longitude = 0.0
+                    )
+                )
             }
         }
     }
 
-    fun removeSavedCity(city: SavedCity) {
-        viewModelScope.launch { repo.removeSavedCity(city.id) }
+    fun removeSavedCity(cityId: Long) {
+        viewModelScope.launch { repo.removeCity(cityId) }
     }
 
     fun onSearchQueryChange(query: String) {

@@ -29,7 +29,7 @@ import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WeatherScreen(viewModel: WeatherViewModel) {
+fun WeatherScreen(viewModel: WeatherViewModel, onSearchClick: () -> Unit) {
     val uiState by viewModel.uiState.collectAsState()
     val gradient = when (val s = uiState) {
         is WeatherUiState.Success -> skyGradient(
@@ -47,7 +47,7 @@ fun WeatherScreen(viewModel: WeatherViewModel) {
         when (val state = uiState) {
             is WeatherUiState.Idle -> IdleContent(viewModel)
             is WeatherUiState.Loading -> LoadingContent()
-            is WeatherUiState.Success -> SuccessContent(state, viewModel)
+            is WeatherUiState.Success -> SuccessContent(state, viewModel, onSearchClick)
             is WeatherUiState.Error -> ErrorContent(state.message) { viewModel.retry() }
         }
     }
@@ -98,7 +98,7 @@ fun ErrorContent(message: String, onRetry: () -> Unit) {
 }
 
 @Composable
-fun SuccessContent(state: WeatherUiState.Success, viewModel: WeatherViewModel) {
+fun SuccessContent(state: WeatherUiState.Success, viewModel: WeatherViewModel, onSearchClick: () -> Unit) {
     val scrollState = rememberScrollState()
     Column(
         modifier = Modifier
@@ -121,7 +121,7 @@ fun SuccessContent(state: WeatherUiState.Success, viewModel: WeatherViewModel) {
             IconButton(onClick = { viewModel.saveCurrentCity() }) {
                 Icon(Icons.Default.BookmarkBorder, contentDescription = "Save", tint = Color.White)
             }
-            IconButton(onClick = { viewModel.clearWeather() }) {
+            IconButton(onClick = onSearchClick) {
                 Icon(Icons.Default.Search, contentDescription = "Search", tint = Color.White)
             }
         }
@@ -140,7 +140,7 @@ fun SuccessContent(state: WeatherUiState.Success, viewModel: WeatherViewModel) {
             fontSize = 20.sp
         )
         Text(
-            text = "H:${state.forecast.daily.temperatureMax[0].toInt()}°  L:${state.forecast.daily.temperatureMin[0].toInt()}°",
+            text = "H:${state.forecast.daily.tempMax[0].toInt()}°  L:${state.forecast.daily.tempMin[0].toInt()}°",
             color = TextSecondary,
             fontSize = 16.sp
         )
@@ -216,9 +216,9 @@ fun DailyForecastCard(forecast: ForecastResponse) {
                 )
                 Text(weatherEmoji(forecast.daily.weatherCode[i]), fontSize = 20.sp, modifier = Modifier.width(36.dp))
                 Spacer(Modifier.weight(1f))
-                Text("${forecast.daily.temperatureMin[i].toInt()}°", color = TextSecondary, fontSize = 15.sp)
+                Text("${forecast.daily.tempMin[i].toInt()}°", color = TextSecondary, fontSize = 15.sp)
                 Spacer(Modifier.width(12.dp))
-                Text("${forecast.daily.temperatureMax[i].toInt()}°", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                Text("${forecast.daily.tempMax[i].toInt()}°", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium)
             }
         }
     }

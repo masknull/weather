@@ -87,7 +87,7 @@ fun SearchScreen(viewModel: WeatherViewModel, onBack: () -> Unit) {
                             items(savedCities) { city ->
                                 SavedCityRow(
                                     city = city,
-                                    onClick = { viewModel.loadCity(city.lat, city.lon, city.name) ; onBack() },
+                                    onClick = { viewModel.loadCity(city.latitude, city.longitude, city.name) ; onBack() },
                                     onDelete = { viewModel.removeSavedCity(city.id) }
                                 )
                             }
