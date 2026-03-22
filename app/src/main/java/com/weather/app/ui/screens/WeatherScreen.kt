@@ -16,6 +16,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -84,11 +85,17 @@ fun LoadingContent() {
 @Composable
 fun ErrorContent(message: String, onRetry: () -> Unit) {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        val clipboard = LocalClipboardManager.current
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text("⚠️", fontSize = 48.sp)
-            Text(message, color = Color.White)
-            Button(onClick = onRetry, colors = ButtonDefaults.buttonColors(containerColor = CardWhite)) {
-                Text("重试", color = Color.White)
+            Text(message, color = Color.White, modifier = Modifier.padding(horizontal = 16.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Button(onClick = onRetry, colors = ButtonDefaults.buttonColors(containerColor = CardWhite)) {
+                    Text("重试", color = Color.White)
+                }
+                OutlinedButton(onClick = { clipboard.setText(androidx.compose.ui.text.AnnotatedString(message)) }) {
+                    Text("复制错误")
+                }
             }
         }
     }

@@ -16,6 +16,7 @@ object WeatherApi {
     private val json = Json {
         ignoreUnknownKeys = true
         coerceInputValues = true
+        isLenient = true
     }
 
     val client = HttpClient(Android) {

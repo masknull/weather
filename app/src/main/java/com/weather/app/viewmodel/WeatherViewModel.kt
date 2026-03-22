@@ -223,7 +223,11 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
         _uiState.value = WeatherUiState.Loading
         repo.getXiaomiWeather(lat, lon).fold(
             onSuccess = { _uiState.value = WeatherUiState.SuccessXiaomi(name, it) },
-            onFailure = { _uiState.value = WeatherUiState.Error(it.message ?: "网络请求失败") }
+            onFailure = {
+                val raw = com.weather.app.data.remote.XiaomiWeatherApi.lastRaw
+                val extra = if (!raw.isNullOrBlank()) "\n\n原始响应(截断)：\n$raw" else ""
+                _uiState.value = WeatherUiState.Error((it.message ?: "网络请求失败") + extra)
+            }
         )
     }
 }
