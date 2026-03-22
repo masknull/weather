@@ -2,7 +2,14 @@ package com.weather.app.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerDefaults
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
@@ -69,19 +76,32 @@ fun WeatherScreen(viewModel: WeatherViewModel, onSearchClick: () -> Unit) {
 
     HorizontalPager(
         state = pagerState,
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize(),
+        pageSpacing = 0.dp,
+        flingBehavior = PagerDefaults.flingBehavior(
+            state = pagerState,
+            snapAnimationSpec = spring(dampingRatio = 0.8f, stiffness = 300f)
+        )
     ) { _ ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(gradient)
         ) {
-            when (val state = uiState) {
-                is WeatherUiState.Idle -> IdleContent(viewModel)
-                is WeatherUiState.Loading -> LoadingContent()
-                is WeatherUiState.SuccessXiaomi -> XiaomiSuccessContent(state, viewModel, onSearchClick, savedCities)
-                is WeatherUiState.Success -> LegacySuccessContent(state, viewModel, onSearchClick)
-                is WeatherUiState.Error -> ErrorContent(state.message) { viewModel.retry() }
+            AnimatedContent(
+                targetState = uiState,
+                transitionSpec = {
+                    fadeIn(tween(300)) togetherWith fadeOut(tween(200))
+                },
+                label = "weather_content"
+            ) { state ->
+                when (state) {
+                    is WeatherUiState.Idle -> IdleContent(viewModel)
+                    is WeatherUiState.Loading -> LoadingContent()
+                    is WeatherUiState.SuccessXiaomi -> XiaomiSuccessContent(state, viewModel, onSearchClick, savedCities)
+                    is WeatherUiState.Success -> LegacySuccessContent(state, viewModel, onSearchClick)
+                    is WeatherUiState.Error -> ErrorContent(state.message) { viewModel.retry() }
+                }
             }
         }
     }
