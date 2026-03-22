@@ -332,15 +332,27 @@ private fun XiaomiSuccessContent(
                                         y = h - ((t - minT) / tRange * (h - 16f) + 8f).toFloat()
                                     )
                                 }
-                                // 按气象标准温度颜色
-                                fun tempColor(t: Double): androidx.compose.ui.graphics.Color = when {
-                                    t <= 0 -> androidx.compose.ui.graphics.Color(0xFF5C6BC0)
-                                    t <= 10 -> androidx.compose.ui.graphics.Color(0xFF42A5F5)
-                                    t <= 20 -> androidx.compose.ui.graphics.Color(0xFF26C6DA)
-                                    t <= 25 -> androidx.compose.ui.graphics.Color(0xFF66BB6A)
-                                    t <= 30 -> androidx.compose.ui.graphics.Color(0xFFFFCA28)
-                                    t <= 35 -> androidx.compose.ui.graphics.Color(0xFFFFA726)
-                                    else -> androidx.compose.ui.graphics.Color(0xFFEF5350)
+                                // 气象标准温度渐变色（线性插值）
+                                fun tempColor(t: Double): androidx.compose.ui.graphics.Color {
+                                    val stops = listOf(
+                                        -10.0 to androidx.compose.ui.graphics.Color(0xFF5C6BC0),
+                                        0.0 to androidx.compose.ui.graphics.Color(0xFF42A5F5),
+                                        10.0 to androidx.compose.ui.graphics.Color(0xFF26C6DA),
+                                        20.0 to androidx.compose.ui.graphics.Color(0xFF66BB6A),
+                                        25.0 to androidx.compose.ui.graphics.Color(0xFFFFCA28),
+                                        30.0 to androidx.compose.ui.graphics.Color(0xFFFFA726),
+                                        40.0 to androidx.compose.ui.graphics.Color(0xFFEF5350)
+                                    )
+                                    val lo = stops.lastOrNull { it.first <= t } ?: stops.first()
+                                    val hi = stops.firstOrNull { it.first > t } ?: stops.last()
+                                    if (lo == hi) return lo.second
+                                    val f = ((t - lo.first) / (hi.first - lo.first)).toFloat().coerceIn(0f, 1f)
+                                    return androidx.compose.ui.graphics.Color(
+                                        red = lerp(lo.second.red, hi.second.red, f),
+                                        green = lerp(lo.second.green, hi.second.green, f),
+                                        blue = lerp(lo.second.blue, hi.second.blue, f),
+                                        alpha = 1f
+                                    )
                                 }
                                 for (i in 1 until pts.size) {
                                     val segPath = GPath()
