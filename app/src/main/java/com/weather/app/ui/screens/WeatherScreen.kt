@@ -12,7 +12,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -77,7 +79,7 @@ fun WeatherScreen(viewModel: WeatherViewModel, onSearchClick: () -> Unit) {
             when (val state = uiState) {
                 is WeatherUiState.Idle -> IdleContent(viewModel)
                 is WeatherUiState.Loading -> LoadingContent()
-                is WeatherUiState.SuccessXiaomi -> XiaomiSuccessContent(state, viewModel, onSearchClick)
+                is WeatherUiState.SuccessXiaomi -> XiaomiSuccessContent(state, viewModel, onSearchClick, savedCities)
                 is WeatherUiState.Success -> LegacySuccessContent(state, viewModel, onSearchClick)
                 is WeatherUiState.Error -> ErrorContent(state.message) { viewModel.retry() }
             }
@@ -151,7 +153,8 @@ fun ErrorContent(message: String, onRetry: () -> Unit) {
 private fun XiaomiSuccessContent(
     state: WeatherUiState.SuccessXiaomi,
     viewModel: WeatherViewModel,
-    onSearchClick: () -> Unit
+    onSearchClick: () -> Unit,
+    savedCities: List<com.weather.app.data.model.SavedCity> = emptyList()
 ) {
     val scrollState = rememberScrollState()
 
@@ -182,7 +185,8 @@ private fun XiaomiSuccessContent(
                 modifier = Modifier.weight(1f)
             )
             IconButton(onClick = { viewModel.saveCurrentCity() }) {
-                Icon(Icons.Default.BookmarkBorder, contentDescription = "收藏", tint = Color.White)
+                val isSaved = savedCities.any { it.name == state.cityName }
+                Icon(if (isSaved) Icons.Default.Bookmark else Icons.Default.BookmarkBorder, contentDescription = "收藏", tint = Color.White)
             }
             IconButton(onClick = onSearchClick) {
                 Icon(Icons.Default.Search, contentDescription = "搜索", tint = Color.White)
@@ -198,7 +202,7 @@ private fun XiaomiSuccessContent(
             lineHeight = 100.sp
         )
         Text(
-            text = current?.weather ?: "",
+            text = xiaomiWeatherDesc(current?.weather),
             color = TextSecondary,
             fontSize = 20.sp
         )
@@ -207,16 +211,10 @@ private fun XiaomiSuccessContent(
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             StatTile("体感", (current?.feelsLike?.value ?: "--") + "°", "🌡️", Modifier.weight(1f))
-            StatTile("风速", (current?.wind?.speed?.value ?: "--") + (current?.wind?.speed?.unit ?: ""), "💨", Modifier.weight(1f))
+            StatTile("湿度", (current?.humidity?.value ?: "--") + "%", "💧", Modifier.weight(1f))
             val sunrise = state.weather.forecastDaily?.sunRiseSet?.value?.firstOrNull()?.from?.substringAfter("T")?.take(5) ?: "--"
             val sunset = state.weather.forecastDaily?.sunRiseSet?.value?.firstOrNull()?.to?.substringAfter("T")?.take(5) ?: "--"
             StatTile("日出日落", "$sunrise/$sunset", "🌅", Modifier.weight(1f))
-        }
-        Spacer(Modifier.height(4.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            StatTile("湿度", (current?.humidity?.value ?: "--") + "%", "💧", Modifier.weight(1f))
-            StatTile("气压", (current?.pressure?.value ?: "--") + (current?.pressure?.unit ?: ""), "🌬️", Modifier.weight(1f))
-            StatTile("能见度", (current?.visibility?.value?.let { if (it.isBlank()) "--" else it } ?: "--") + (current?.visibility?.unit ?: ""), "👁️", Modifier.weight(1f))
         }
 
         Spacer(Modifier.height(12.dp))
@@ -359,8 +357,9 @@ private fun LegacySuccessContent(
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.weight(1f)
             )
-            IconButton(onClick = { viewModel.saveCurrentCity() }) {
-                Icon(Icons.Default.BookmarkBorder, contentDescription = "收藏", tint = Color.White)
+            val isSaved = savedCities.any { it.name == state.cityName }
+            IconButton(onClick = { if (isSaved) viewModel.removeSavedCity(state.cityName.hashCode().toLong()) else viewModel.saveCurrentCity() }) {
+                Icon(if (isSaved) Icons.Default.Bookmark else Icons.Default.BookmarkBorder, contentDescription = if (isSaved) "已收藏" else "收藏", tint = Color.White)
             }
             IconButton(onClick = onSearchClick) {
                 Icon(Icons.Default.Search, contentDescription = "搜索", tint = Color.White)
