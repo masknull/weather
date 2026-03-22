@@ -111,7 +111,10 @@ fun WeatherScreen(viewModel: WeatherViewModel, onSearchClick: () -> Unit) {
     LaunchedEffect(pagerState.settledPage, pagerCities) {
         val city = pagerCities.getOrNull(pagerState.settledPage)
         if (city != null) {
-            viewModel.loadCity(city.latitude, city.longitude, city.name)
+            val cached = cityStates["${String.format("%.4f", city.latitude)},${String.format("%.4f", city.longitude)},${city.name}"]
+            if (cached == null) {
+                viewModel.loadCity(city.latitude, city.longitude, city.name, saveAsLast = false)
+            }
         }
     }
 
@@ -427,15 +430,26 @@ private fun XiaomiSuccessContent(
                                         val normalized = ((t - minT) / tRange).toFloat().coerceIn(0f, 1f)
                                         val tempYOffset = ((1f - normalized) * 28f).dp
                                         Box(modifier = Modifier.width(itemWDp.dp).fillMaxHeight()) {
-                                            Text(
-                                                text = "${t.toInt()}°",
-                                                color = Color.White,
-                                                fontSize = 10.sp,
-                                                fontWeight = FontWeight.Medium,
+                                            Row(
                                                 modifier = Modifier
                                                     .align(Alignment.TopCenter)
-                                                    .offset(y = tempYOffset)
-                                            )
+                                                    .offset(y = tempYOffset),
+                                                verticalAlignment = Alignment.Top
+                                            ) {
+                                                Text(
+                                                    text = "${t.toInt()}",
+                                                    color = Color.White,
+                                                    fontSize = 10.sp,
+                                                    fontWeight = FontWeight.Medium
+                                                )
+                                                Text(
+                                                    text = "°",
+                                                    color = Color.White,
+                                                    fontSize = 5.sp,
+                                                    fontWeight = FontWeight.Medium,
+                                                    modifier = Modifier.offset(y = 1.dp)
+                                                )
+                                            }
                                         }
                                     } else {
                                         Spacer(modifier = Modifier.width(itemWDp.dp))

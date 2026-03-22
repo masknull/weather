@@ -108,10 +108,11 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                LaunchedEffect(uiState) {
-                    if (uiState is com.weather.app.viewmodel.WeatherUiState.Success ||
+                LaunchedEffect(uiState, route) {
+                    if (route != "search" && (
+                        uiState is com.weather.app.viewmodel.WeatherUiState.Success ||
                         uiState is com.weather.app.viewmodel.WeatherUiState.SuccessXiaomi
-                    ) {
+                    )) {
                         route = "weather"
                     }
                 }

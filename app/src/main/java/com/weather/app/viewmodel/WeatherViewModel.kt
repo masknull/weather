@@ -135,10 +135,10 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    fun loadCity(lat: Double, lon: Double, name: String) {
+    fun loadCity(lat: Double, lon: Double, name: String, saveAsLast: Boolean = true) {
         viewModelScope.launch {
             loadWeather(lat, lon, name)
-            repo.saveLastLocation(lat, lon, name)
+            if (saveAsLast) repo.saveLastLocation(lat, lon, name)
         }
     }
 

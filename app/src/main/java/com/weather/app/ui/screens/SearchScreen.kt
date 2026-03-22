@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -33,7 +34,9 @@ fun SearchScreen(viewModel: WeatherViewModel, onBack: () -> Unit) {
     val savedCities by viewModel.savedCities.collectAsState(emptyList())
     val focusRequester = remember { FocusRequester() }
 
-    LaunchedEffect(Unit) { focusRequester.requestFocus() }
+    LaunchedEffect(Unit) {
+        viewModel.clearSearch()
+    }
 
     Box(
         modifier = Modifier
@@ -56,37 +59,33 @@ fun SearchScreen(viewModel: WeatherViewModel, onBack: () -> Unit) {
                     modifier = Modifier
                         .weight(1f)
                         .background(CardWhite, RoundedCornerShape(12.dp))
-                        .padding(horizontal = 12.dp, vertical = 2.dp),
+                        .padding(horizontal = 12.dp, vertical = 0.dp)
+                        .height(48.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(Icons.Default.Search, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    OutlinedTextField(
+                    BasicTextField(
                         value = searchQuery,
                         onValueChange = { viewModel.onSearchQueryChange(it) },
-                        placeholder = { Text("搜索城市…", color = TextSecondary) },
                         singleLine = true,
-                        modifier = Modifier.weight(1f).focusRequester(focusRequester),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White,
-                            focusedBorderColor = Color.Transparent,
-                            unfocusedBorderColor = Color.Transparent,
-                            disabledBorderColor = Color.Transparent,
-                            focusedContainerColor = Color.Transparent,
-                            unfocusedContainerColor = Color.Transparent,
-                            disabledContainerColor = Color.Transparent,
-                            cursorColor = Color.White
-                        ),
-                        shape = RoundedCornerShape(12.dp),
-                        trailingIcon = {
-                            if (searchQuery.isNotEmpty()) {
-                                IconButton(onClick = { viewModel.onSearchQueryChange("") }) {
-                                    Icon(Icons.Default.Clear, contentDescription = null, tint = TextSecondary)
+                        textStyle = androidx.compose.ui.text.TextStyle(color = Color.White, fontSize = 16.sp),
+                        cursorBrush = androidx.compose.ui.graphics.SolidColor(Color.Transparent),
+                        modifier = Modifier.weight(1f),
+                        decorationBox = { innerTextField ->
+                            Box(contentAlignment = Alignment.CenterStart) {
+                                if (searchQuery.isEmpty()) {
+                                    Text("搜索城市…", color = TextSecondary)
                                 }
+                                innerTextField()
                             }
                         }
                     )
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { viewModel.onSearchQueryChange("") }) {
+                            Icon(Icons.Default.Clear, contentDescription = null, tint = TextSecondary)
+                        }
+                    }
                 }
             }
 
@@ -94,14 +93,14 @@ fun SearchScreen(viewModel: WeatherViewModel, onBack: () -> Unit) {
 
             // Quick entry: use current location
             ElevatedCard(
-                onClick = { viewModel.fetchCurrentLocation() },
+                onClick = { viewModel.fetchCurrentLocation(); onBack() },
                 shape = RoundedCornerShape(12.dp),
                 elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp),
                 colors = CardDefaults.elevatedCardColors(containerColor = CardWhite),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
-                    modifier = Modifier.padding(14.dp),
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 11.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(Icons.Default.MyLocation, contentDescription = null, tint = Color.White)
