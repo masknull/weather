@@ -431,12 +431,18 @@ private fun XiaomiSuccessContent(
                                 "${day}号"
                             }
                         }
-                        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp), modifier = Modifier.width(52.dp)) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp), modifier = Modifier.width(56.dp)) {
                             Text(dayLabel, color = TextSecondary, fontSize = 10.sp)
-                            Text(xiaomiWeatherDesc(wRange?.from), color = TextSecondary, fontSize = 10.sp, maxLines = 1)
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text(weatherEmojiFromText(xiaomiWeatherDesc(wRange?.from)), fontSize = 13.sp)
+                                Text(xiaomiWeatherDesc(wRange?.from), color = Color.White, fontSize = 10.sp, maxLines = 1)
+                            }
                             Text("${r?.from ?: "--"}°", color = Color(0xFFFFD54F), fontSize = 13.sp, fontWeight = FontWeight.Medium)
                             Text("${r?.to ?: "--"}°", color = Color(0xFF90CAF9), fontSize = 11.sp)
-                            Text(xiaomiWeatherDesc(wRange?.to), color = TextSecondary, fontSize = 10.sp, maxLines = 1)
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text(weatherEmojiFromText(xiaomiWeatherDesc(wRange?.to)), fontSize = 13.sp)
+                                Text(xiaomiWeatherDesc(wRange?.to), color = TextSecondary, fontSize = 10.sp, maxLines = 1)
+                            }
                         }
                     }
                 }
