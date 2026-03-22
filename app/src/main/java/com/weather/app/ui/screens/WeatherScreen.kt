@@ -161,7 +161,7 @@ private fun XiaomiSuccessContent(
         Spacer(Modifier.height(12.dp))
 
         val hTimes = hourlySeriesTemp?.time.orEmpty()
-        val hTemps = hourlySeriesTemp?.value.orEmpty()
+        val hTemps = hourlySeriesTemp?.value.orEmpty().map { it.toString() }
         val hWeathers = hourlySeriesWeather?.value.orEmpty()
         if (hTimes.isNotEmpty() && hTemps.isNotEmpty()) {
             GlassCard(Modifier.fillMaxWidth()) {
