@@ -15,7 +15,6 @@ data class XiaomiWeatherResponse(
 )
 
 @Serializable
-@Serializable
 sealed class XiaomiValue {
     abstract val value: String?
     abstract val unit: String?
