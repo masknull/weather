@@ -277,25 +277,21 @@ private fun XiaomiSuccessContent(
             aqiVal <= 300 -> "重度"
             else -> "严重"
         }
-        Text(
-            text = buildString {
-                append(xiaomiWeatherDesc(current?.weather))
-                append("｜最高 ")
-                append(todayHigh)
-                append("°｜最低 ")
-                append(todayLow)
-                append("°")
-                if (aqiVal != null) {
-                    append("｜空气")
-                    append(aqiLabel)
-                    append(" ")
-                    append(aqiVal)
-                }
-            },
-            color = Color.White,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Medium
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(xiaomiWeatherDesc(current?.weather), color = TextSecondary, fontSize = 16.sp)
+            Text("${todayHigh}°↑", color = Color(0xFFFFD54F), fontSize = 15.sp)
+            Text("${todayLow}°↓", color = Color(0xFF90CAF9), fontSize = 15.sp)
+            if (aqiVal != null) Text("AQI $aqiVal $aqiLabel", color = when {
+                aqiVal <= 50 -> Color(0xFF66BB6A)
+                aqiVal <= 100 -> Color(0xFFFFCA28)
+                aqiVal <= 150 -> Color(0xFFFFA726)
+                aqiVal <= 200 -> Color(0xFFEF5350)
+                else -> Color(0xFFAB47BC)
+            }, fontSize = 13.sp)
+        }
 
         Spacer(Modifier.height(16.dp))
 
