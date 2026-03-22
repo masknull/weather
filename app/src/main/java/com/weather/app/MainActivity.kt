@@ -44,6 +44,7 @@ class MainActivity : ComponentActivity() {
             WeatherTheme {
                 var route by remember { mutableStateOf("home") }
                 val uiState by viewModel.uiState.collectAsState()
+                val lastLocation by viewModel.lastLocation.collectAsState(initial = null)
 
                 AnimatedContent(
                     targetState = route,
@@ -65,7 +66,7 @@ class MainActivity : ComponentActivity() {
                         )
                         "search" -> SearchScreen(
                             viewModel = viewModel,
-                            onBack = { route = "home" }
+                            onBack = { route = "weather" }
                         )
                         "weather" -> WeatherScreen(
                             viewModel = viewModel,
@@ -75,6 +76,15 @@ class MainActivity : ComponentActivity() {
                             onUseLocation = { viewModel.requestLocationPermission() },
                             onChooseCity = { route = "search" }
                         )
+                    }
+                }
+
+                LaunchedEffect(lastLocation) {
+                    val ll = lastLocation
+                    if (ll != null && route == "home") {
+                        // restore last city on cold start
+                        viewModel.loadCity(ll.first, ll.second, ll.third)
+                        route = "weather"
                     }
                 }
 

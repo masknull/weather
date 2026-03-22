@@ -52,6 +52,9 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
     val savedCities: StateFlow<List<SavedCity>> = repo.savedCities
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val lastLocation: StateFlow<Triple<Double, Double, String>?> = repo.lastLocation
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
     fun setLocationPermissionLauncher(launcher: (Array<String>) -> Unit) {
         permissionLauncher = launcher
     }

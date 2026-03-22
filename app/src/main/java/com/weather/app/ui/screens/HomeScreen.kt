@@ -78,6 +78,13 @@ fun HomeScreen(
                 icon = { Icon(Icons.Default.Search, contentDescription = null, tint = Color.White) },
                 onClick = onChooseCity
             )
+
+            Text(
+                text = "提示：进入天气页后，返回/搜索都会留在天气页。只有首次或无历史城市时才会回到这里。",
+                color = Color.White.copy(alpha = 0.55f),
+                fontSize = 12.sp,
+                modifier = Modifier.padding(top = 12.dp)
+            )
         }
     }
 }
