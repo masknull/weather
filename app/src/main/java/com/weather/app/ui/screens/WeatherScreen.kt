@@ -24,9 +24,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.weather.app.ui.components.GlassCard
 import com.weather.app.ui.components.StatTile
-import com.weather.app.ui.components.TextSecondary
 import com.weather.app.ui.components.weatherEmoji
 import com.weather.app.ui.theme.CardWhite
+import com.weather.app.ui.theme.TextSecondary
 import com.weather.app.viewmodel.WeatherUiState
 import com.weather.app.viewmodel.WeatherViewModel
 
