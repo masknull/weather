@@ -366,17 +366,19 @@ private fun XiaomiSuccessContent(
                                 // 温度标注
                                 curveTemps.forEachIndexed { i, t ->
                                     val pt = pts[i]
-                                    drawContext.canvas.nativeCanvas.drawText(
-                                        "${t.toInt()}°",
-                                        pt.x,
-                                        pt.y - 10f,
-                                        android.graphics.Paint().apply {
-                                            color = android.graphics.Color.WHITE
-                                            textSize = 28f
-                                            textAlign = android.graphics.Paint.Align.CENTER
-                                            isAntiAlias = true
-                                        }
-                                    )
+                                    drawIntoCanvas { canvas ->
+                                        canvas.nativeCanvas.drawText(
+                                            "${t.toInt()}°",
+                                            pt.x,
+                                            pt.y - 10f,
+                                            android.graphics.Paint().apply {
+                                                color = android.graphics.Color.WHITE
+                                                textSize = 28f
+                                                textAlign = android.graphics.Paint.Align.CENTER
+                                                isAntiAlias = true
+                                            }
+                                        )
+                                    }
                                 }
                             }
                         }
