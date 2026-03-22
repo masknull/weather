@@ -42,7 +42,7 @@ class WeatherRepository(private val context: Context) {
                     latitude = it.latitude?.toDoubleOrNull() ?: 0.0,
                     longitude = it.longitude?.toDoubleOrNull() ?: 0.0,
                     country = it.affiliation,
-                    admin1 = null
+                    region = null
                 )
             }
     }
