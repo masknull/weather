@@ -63,11 +63,18 @@ private data class PagerCity(
     val latitude: Double,
     val longitude: Double,
     val isCurrent: Boolean = false
-)
+) {
+    val key: String get() = "${String.format("%.4f", latitude)},${String.format("%.4f", longitude)},$name"
+}
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
-fun WeatherScreen(viewModel: WeatherViewModel, onSearchClick: () -> Unit) {
+fun WeatherScreen(
+    viewModel: WeatherViewModel,
+    onSearchClick: () -> Unit,
+    selectedCityKey: String? = null,
+    onSelectedCityChange: (String) -> Unit = {}
+) {
     val uiState by viewModel.uiState.collectAsState()
     val cityStates by viewModel.cityStates.collectAsState()
     val savedCities by viewModel.savedCities.collectAsState()
@@ -106,12 +113,23 @@ fun WeatherScreen(viewModel: WeatherViewModel, onSearchClick: () -> Unit) {
     }
 
     val pageCount = maxOf(1, pagerCities.size)
-    val pagerState = rememberPagerState(pageCount = { pageCount })
+    val initialPage = remember(pagerCities, selectedCityKey) {
+        pagerCities.indexOfFirst { it.key == selectedCityKey }.takeIf { it >= 0 } ?: 0
+    }
+    val pagerState = rememberPagerState(initialPage = initialPage, pageCount = { pageCount })
+
+    LaunchedEffect(selectedCityKey, pagerCities) {
+        val index = pagerCities.indexOfFirst { it.key == selectedCityKey }
+        if (index >= 0 && pagerState.currentPage != index) {
+            pagerState.scrollToPage(index)
+        }
+    }
 
     LaunchedEffect(pagerState.settledPage, pagerCities) {
         val city = pagerCities.getOrNull(pagerState.settledPage)
         if (city != null) {
-            val cached = cityStates["${String.format("%.4f", city.latitude)},${String.format("%.4f", city.longitude)},${city.name}"]
+            onSelectedCityChange(city.key)
+            val cached = cityStates[city.key]
             if (cached == null) {
                 viewModel.loadCity(city.latitude, city.longitude, city.name, saveAsLast = false)
             }
@@ -136,7 +154,7 @@ fun WeatherScreen(viewModel: WeatherViewModel, onSearchClick: () -> Unit) {
     ) { page ->
         val pageCity = pagerCities.getOrNull(page)
         val pageState = pageCity?.let { city ->
-            cityStates["${String.format("%.4f", city.latitude)},${String.format("%.4f", city.longitude)},${city.name}"]
+            cityStates[city.key]
         } ?: if (page == pagerState.settledPage) uiState else WeatherUiState.Idle
 
         Box(
@@ -445,7 +463,7 @@ private fun XiaomiSuccessContent(
                                                 Text(
                                                     text = "°",
                                                     color = Color.White,
-                                                    fontSize = 5.sp,
+                                                    fontSize = 4.sp,
                                                     fontWeight = FontWeight.Medium,
                                                     modifier = Modifier.offset(y = 1.dp)
                                                 )
@@ -470,7 +488,7 @@ private fun XiaomiSuccessContent(
                                 ) {
                                     Text(hTimes.getOrNull(idx) ?: "", color = Color.White.copy(alpha = 0.9f), fontSize = 10.sp)
                                     Text(weatherEmojiFromText(xiaomiWeatherDesc(hWeathers.getOrNull(idx))), fontSize = 20.sp)
-                                    if (precipPct > 0) Text("${precipPct}%", color = Color(0xFF90CAF9), fontSize = 10.sp)
+                                    if (precipPct > 0) Text("${precipPct}%", color = Color(0xFFD6F0FF), fontSize = 10.sp)
                                 }
                             }
                         }

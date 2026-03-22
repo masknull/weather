@@ -28,7 +28,11 @@ import com.weather.app.viewmodel.WeatherViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchScreen(viewModel: WeatherViewModel, onBack: () -> Unit) {
+fun SearchScreen(
+    viewModel: WeatherViewModel,
+    onBack: () -> Unit,
+    onCitySelected: (Double, Double, String) -> Unit
+) {
     val searchQuery by viewModel.searchQuery.collectAsState()
     val searchState by viewModel.searchState.collectAsState()
     val savedCities by viewModel.savedCities.collectAsState(emptyList())
@@ -70,7 +74,7 @@ fun SearchScreen(viewModel: WeatherViewModel, onBack: () -> Unit) {
                         onValueChange = { viewModel.onSearchQueryChange(it) },
                         singleLine = true,
                         textStyle = androidx.compose.ui.text.TextStyle(color = Color.White, fontSize = 16.sp),
-                        cursorBrush = androidx.compose.ui.graphics.SolidColor(Color.Transparent),
+                        cursorBrush = androidx.compose.ui.graphics.SolidColor(if (searchQuery.isEmpty()) Color.Transparent else Color.White),
                         modifier = Modifier.weight(1f),
                         decorationBox = { innerTextField ->
                             Box(contentAlignment = Alignment.CenterStart) {
@@ -93,7 +97,11 @@ fun SearchScreen(viewModel: WeatherViewModel, onBack: () -> Unit) {
 
             // Quick entry: use current location
             ElevatedCard(
-                onClick = { viewModel.fetchCurrentLocation(); onBack() },
+                onClick = {
+                    val last = viewModel.lastLocation.value
+                    viewModel.fetchCurrentLocation()
+                    if (last != null) onCitySelected(last.first, last.second, last.third) else onBack()
+                },
                 shape = RoundedCornerShape(12.dp),
                 elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp),
                 colors = CardDefaults.elevatedCardColors(containerColor = CardWhite),
@@ -124,7 +132,10 @@ fun SearchScreen(viewModel: WeatherViewModel, onBack: () -> Unit) {
                             items(savedCities) { city ->
                                 SavedCityRow(
                                     city = city,
-                                    onClick = { viewModel.loadCity(city.latitude, city.longitude, city.name) ; onBack() },
+                                    onClick = {
+                                        viewModel.loadCity(city.latitude, city.longitude, city.name)
+                                        onCitySelected(city.latitude, city.longitude, city.name)
+                                    },
                                     onDelete = { viewModel.removeSavedCity(city.id) }
                                 )
                             }
@@ -150,7 +161,7 @@ fun SearchScreen(viewModel: WeatherViewModel, onBack: () -> Unit) {
                             items(state.locations) { loc ->
                                 LocationRow(loc) {
                                     viewModel.loadCity(loc.latitude, loc.longitude, loc.displayName)
-                                    onBack()
+                                    onCitySelected(loc.latitude, loc.longitude, loc.displayName)
                                 }
                             }
                         }

@@ -13,8 +13,8 @@ android {
         applicationId = "com.weather.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 110
-        versionName = "1.0.2-beta.54"
+        versionCode = 111
+        versionName = "1.0.2-beta.55"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

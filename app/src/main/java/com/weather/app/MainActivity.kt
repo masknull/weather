@@ -45,6 +45,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             WeatherTheme {
                 var route by remember { mutableStateOf("home") }
+                var selectedCityKey by remember { mutableStateOf<String?>(null) }
                 val uiState by viewModel.uiState.collectAsState()
                 val lastLocation by viewModel.lastLocation.collectAsState(initial = null)
 
@@ -68,11 +69,17 @@ class MainActivity : ComponentActivity() {
                         )
                         "search" -> SearchScreen(
                             viewModel = viewModel,
-                            onBack = { route = "weather" }
+                            onBack = { route = "weather" },
+                            onCitySelected = { lat, lon, name ->
+                                selectedCityKey = "${String.format("%.4f", lat)},${String.format("%.4f", lon)},$name"
+                                route = "weather"
+                            }
                         )
                         "weather" -> WeatherScreen(
                             viewModel = viewModel,
-                            onSearchClick = { route = "search" }
+                            onSearchClick = { route = "search" },
+                            selectedCityKey = selectedCityKey,
+                            onSelectedCityChange = { selectedCityKey = it }
                         )
                         else -> HomeScreen(
                             onUseLocation = { viewModel.requestLocationPermission() },
@@ -102,17 +109,8 @@ class MainActivity : ComponentActivity() {
                 LaunchedEffect(lastLocation) {
                     val ll = lastLocation
                     if (ll != null && route == "home") {
-                        // restore last city on cold start
+                        selectedCityKey = "${String.format("%.4f", ll.first)},${String.format("%.4f", ll.second)},${ll.third}"
                         viewModel.loadCity(ll.first, ll.second, ll.third)
-                        route = "weather"
-                    }
-                }
-
-                LaunchedEffect(uiState, route) {
-                    if (route != "search" && (
-                        uiState is com.weather.app.viewmodel.WeatherUiState.Success ||
-                        uiState is com.weather.app.viewmodel.WeatherUiState.SuccessXiaomi
-                    )) {
                         route = "weather"
                     }
                 }
