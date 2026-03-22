@@ -102,6 +102,7 @@ fun WeatherScreen(viewModel: WeatherViewModel, onSearchClick: () -> Unit) {
                 transitionSpec = {
                     fadeIn(tween(300)) togetherWith fadeOut(tween(200))
                 },
+                contentKey = { s -> if (s is WeatherUiState.SuccessXiaomi) s.cityName else s::class },
                 label = "weather_content"
             ) { state ->
                 when (state) {
@@ -347,21 +348,16 @@ private fun XiaomiSuccessContent(
                                 }
                                 pts.forEachIndexed { i, pt -> drawCircle(color = tempColor(curveTemps[i]), radius = 4f, center = pt) }
                                 // 温度标注
+                                // 温度标注用 nativeCanvas via drawContext
+                                val paint = android.graphics.Paint().apply {
+                                    color = android.graphics.Color.WHITE
+                                    textSize = 28f
+                                    textAlign = android.graphics.Paint.Align.CENTER
+                                    isAntiAlias = true
+                                }
                                 curveTemps.forEachIndexed { i, t ->
                                     val pt = pts[i]
-                                    drawIntoCanvas { canvas ->
-                                        canvas.nativeCanvas.drawText(
-                                            "${t.toInt()}°",
-                                            pt.x,
-                                            pt.y - 10f,
-                                            android.graphics.Paint().apply {
-                                                color = android.graphics.Color.WHITE
-                                                textSize = 28f
-                                                textAlign = android.graphics.Paint.Align.CENTER
-                                                isAntiAlias = true
-                                            }
-                                        )
-                                    }
+                                    drawContext.canvas.nativeCanvas.drawText("${t.toInt()}°", pt.x, pt.y - 10f, paint)
                                 }
                             }
                         }
