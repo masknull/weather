@@ -203,18 +203,17 @@ private fun XiaomiSuccessContent(
             Spacer(Modifier.height(12.dp))
         }
 
-        // Daily: 小米返回是 series 结构，beta 先把 temperature.time/value 原样展示（后续再拆 min/max）
-        val dTimes = state.weather.forecastDaily?.temperature?.time.orEmpty()
-        val dTemps = state.weather.forecastDaily?.temperature?.value.orEmpty()
-        if (dTimes.isNotEmpty() && dTemps.isNotEmpty()) {
+        val dRanges = state.weather.forecastDaily?.temperature?.value.orEmpty()
+        if (dRanges.isNotEmpty()) {
             GlassCard(Modifier.fillMaxWidth()) {
                 Text("未来几天", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Medium)
                 Spacer(Modifier.height(8.dp))
-                val count = minOf(7, dTimes.size, dTemps.size)
+                val count = minOf(7, dRanges.size)
                 for (i in 0 until count) {
+                    val r = dRanges.getOrNull(i)
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Text(dTimes.getOrNull(i) ?: "", color = TextSecondary, modifier = Modifier.weight(1f))
-                        Text(((dTemps.getOrNull(i) ?: Double.NaN).let { if (it.isNaN()) "--" else it.toInt().toString() }) + "°", color = Color.White)
+                        Text("第${i + 1}天", color = TextSecondary, modifier = Modifier.weight(1f))
+                        Text("${r?.to ?: "--"}° ~ ${r?.from ?: "--"}°", color = Color.White)
                     }
                     Spacer(Modifier.height(6.dp))
                 }

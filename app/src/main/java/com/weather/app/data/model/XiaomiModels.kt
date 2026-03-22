@@ -34,8 +34,6 @@ data class XiaomiWind(
     val speed: XiaomiUnitValue? = null,
 )
 
-// Xiaomi hourly/daily payloads are nested by metric arrays, not list-of-items.
-
 @Serializable
 data class XiaomiForecastHourly(
     val status: Int? = null,
@@ -50,7 +48,7 @@ data class XiaomiForecastHourly(
 @Serializable
 data class XiaomiForecastDaily(
     val status: Int? = null,
-    val temperature: XiaomiSeries? = null,
+    val temperature: XiaomiDailyTemperatureSeries? = null,
     val weather: XiaomiSeries? = null,
     val aqi: XiaomiSeries? = null,
     val wind: XiaomiSeries? = null,
@@ -66,6 +64,19 @@ data class XiaomiSeries(
     val value: List<Double>? = null,
     val from: String? = null,
     val pubTime: String? = null,
+)
+
+@Serializable
+data class XiaomiDailyTemperatureSeries(
+    val status: Int? = null,
+    val unit: String? = null,
+    val value: List<XiaomiTempRange>? = null,
+)
+
+@Serializable
+data class XiaomiTempRange(
+    val from: String? = null,
+    val to: String? = null,
 )
 
 @Serializable
