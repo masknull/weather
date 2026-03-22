@@ -144,7 +144,7 @@ private fun XiaomiSuccessContent(
 
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = state.cityName,
+                text = state.cityName.split(" ").last().split(",").last().split("，").last(),
                 color = Color.White,
                 fontSize = 28.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -187,7 +187,9 @@ private fun XiaomiSuccessContent(
         val hWeathers = hourlySeriesWeather?.value.orEmpty().map { it.toString() }
         if (hTimes.isNotEmpty() && hTemps.isNotEmpty()) {
             GlassCard(Modifier.fillMaxWidth()) {
-                Text("24小时预报", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                val hPrecip = state.weather.forecastHourly?.precipitationProbability?.value.orEmpty()
+                val precipDesc = state.weather.forecastHourly?.precipitationProbability?.desc
+                Text("24小时预报" + if (!precipDesc.isNullOrBlank()) "  $precipDesc" else "", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Medium)
                 Spacer(Modifier.height(12.dp))
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
                     val count = minOf(24, hTimes.size, hTemps.size)
@@ -204,18 +206,23 @@ private fun XiaomiSuccessContent(
         }
 
         val dRanges = state.weather.forecastDaily?.temperature?.value.orEmpty()
+        val dWeathers = state.weather.forecastDaily?.weather?.value.orEmpty()
         if (dRanges.isNotEmpty()) {
             GlassCard(Modifier.fillMaxWidth()) {
-                Text("未来几天", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                Text("未来${dRanges.size}天", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Medium)
                 Spacer(Modifier.height(8.dp))
-                val count = minOf(7, dRanges.size)
-                for (i in 0 until count) {
-                    val r = dRanges.getOrNull(i)
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Text("第${i + 1}天", color = TextSecondary, modifier = Modifier.weight(1f))
-                        Text("${r?.to ?: "--"}° ~ ${r?.from ?: "--"}°", color = Color.White)
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    items(dRanges.size) { i ->
+                        val r = dRanges.getOrNull(i)
+                        val wRange = dWeathers.getOrNull(i)
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("第${i + 1}天", color = TextSecondary, fontSize = 11.sp)
+                            Spacer(Modifier.height(4.dp))
+                            if (wRange != null) Text(xiaomiWeatherDesc(wRange.from ?: "0"), color = TextSecondary, fontSize = 10.sp)
+                            Text("${r?.to ?: "--"}°", color = Color.White, fontSize = 14.sp)
+                            Text("~${r?.from ?: "--"}°", color = TextSecondary, fontSize = 11.sp)
+                        }
                     }
-                    Spacer(Modifier.height(6.dp))
                 }
             }
             Spacer(Modifier.height(12.dp))
@@ -245,14 +252,20 @@ private fun XiaomiSuccessContent(
             Spacer(Modifier.height(12.dp))
         }
 
-        if (indices.isNotEmpty()) {
+        val nonEmptyIndices = indices.filter { !it.value.isNullOrBlank() && it.value != "0" }
+        if (nonEmptyIndices.isNotEmpty()) {
             GlassCard(Modifier.fillMaxWidth()) {
                 Text("生活指数", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Medium)
                 Spacer(Modifier.height(8.dp))
-                indices.take(12).forEach { i ->
-                    Text(i.name ?: "", color = Color.White, fontWeight = FontWeight.SemiBold)
-                    if (!i.desc.isNullOrBlank()) Text(i.desc!!, color = TextSecondary)
-                    Spacer(Modifier.height(10.dp))
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    items(nonEmptyIndices.size) { idx ->
+                        val item = nonEmptyIndices[idx]
+                        val label = indexTypeLabel(item.type ?: "")
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(64.dp)) {
+                            Text(label, color = TextSecondary, fontSize = 10.sp)
+                            Text(item.value ?: "--", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
                 }
             }
             Spacer(Modifier.height(12.dp))
@@ -316,4 +329,57 @@ private fun weatherEmojiFromText(text: String?): String {
         t.contains("晴") || t.contains("sun") || t.contains("clear") -> "☀️"
         else -> "🌤️"
     }
+}
+
+private fun indexTypeLabel(type: String): String = when (type) {
+    "uvIndex" -> "紫外线"
+    "humidity" -> "相对湿度"
+    "feelsLike" -> "体感温度"
+    "pressure" -> "气压"
+    "carWash" -> "洗车指数"
+    "sports" -> "运动指数"
+    "dressing" -> "穿衣指数"
+    "comfort" -> "舒适度"
+    "flu" -> "感冒指数"
+    "travel" -> "旅游指数"
+    "sunscreen" -> "防晒指数"
+    else -> type
+}
+
+fun xiaomiWeatherDesc(code: String?): String = when (code) {
+    "0" -> "晴"
+    "1" -> "多云"
+    "2" -> "阴"
+    "3" -> "阵雨"
+    "4" -> "雷阵雨"
+    "5" -> "雷阵雨伴冰雹"
+    "6" -> "雨夹雪"
+    "7" -> "小雨"
+    "8" -> "中雨"
+    "9" -> "大雨"
+    "10" -> "暴雨"
+    "11" -> "大暴雨"
+    "12" -> "特大暴雨"
+    "13" -> "阵雪"
+    "14" -> "小雪"
+    "15" -> "中雪"
+    "16" -> "大雪"
+    "17" -> "暴雪"
+    "18" -> "雾"
+    "19" -> "冻雨"
+    "20" -> "沙尘暴"
+    "21" -> "小到中雨"
+    "22" -> "中到大雨"
+    "23" -> "大到暴雨"
+    "24" -> "暴雨到大暴雨"
+    "25" -> "大暴雨到特大暴雨"
+    "26" -> "小到中雪"
+    "27" -> "中到大雪"
+    "28" -> "大到暴雪"
+    "29" -> "浮尘"
+    "30" -> "扬沙"
+    "31" -> "强沙尘暴"
+    "53" -> "霾"
+    null, "" -> "--"
+    else -> code
 }

@@ -93,13 +93,21 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
         requestOrFetchCurrentLocation()
     }
 
+    @SuppressLint("MissingPermission")
     private fun fetchCurrentLocationInternal() {
         viewModelScope.launch {
             _uiState.value = WeatherUiState.Loading
             try {
-                // Hard timeout to avoid endless spinner
+                // 先试 lastKnownLocation（快，无需等待 GPS 锁定）
+                val last = fusedLocation.lastLocation.await()
+                if (last != null) {
+                    loadWeather(last.latitude, last.longitude, "我的位置")
+                    repo.saveLastLocation(last.latitude, last.longitude, "我的位置")
+                    return@launch
+                }
+                // fallback: getCurrentLocation，超时 8 秒
                 val cts = CancellationTokenSource()
-                val location = kotlinx.coroutines.withTimeoutOrNull(4000) {
+                val location = kotlinx.coroutines.withTimeoutOrNull(8000) {
                     fusedLocation.getCurrentLocation(
                         Priority.PRIORITY_BALANCED_POWER_ACCURACY,
                         cts.token
@@ -109,7 +117,7 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
                     loadWeather(location.latitude, location.longitude, "我的位置")
                     repo.saveLastLocation(location.latitude, location.longitude, "我的位置")
                 } else {
-                    _uiState.value = WeatherUiState.Error("定位超时或不可用，请打开系统定位或手动选择城市")
+                    _uiState.value = WeatherUiState.Error("定位失败：系统无位置信息，请检查定位开关或手动选择城市")
                 }
             } catch (e: Exception) {
                 _uiState.value = WeatherUiState.Error("定位失败：${e.message ?: "未知错误"}")

@@ -132,6 +132,8 @@ data class XiaomiIndices(
 
 @Serializable
 data class XiaomiIndexItem(
+    val type: String? = null,
     val name: String? = null,
     val desc: String? = null,
+    val value: String? = null,
 )
