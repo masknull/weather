@@ -99,7 +99,7 @@ fun WeatherScreen(viewModel: WeatherViewModel, onSearchClick: () -> Unit) {
                     is WeatherUiState.Idle -> IdleContent(viewModel)
                     is WeatherUiState.Loading -> LoadingContent()
                     is WeatherUiState.SuccessXiaomi -> XiaomiSuccessContent(state, viewModel, onSearchClick, savedCities)
-                    is WeatherUiState.Success -> LegacySuccessContent(state, viewModel, onSearchClick)
+                    is WeatherUiState.Success -> LegacySuccessContent(state, viewModel, onSearchClick, savedCities)
                     is WeatherUiState.Error -> ErrorContent(state.message) { viewModel.retry() }
                 }
             }
@@ -356,7 +356,8 @@ private fun XiaomiSuccessContent(
 private fun LegacySuccessContent(
     state: WeatherUiState.Success,
     viewModel: WeatherViewModel,
-    onSearchClick: () -> Unit
+    onSearchClick: () -> Unit,
+    savedCities: List<com.weather.app.data.model.SavedCity> = emptyList()
 ) {
     // 保留旧实现，避免大改导致回归；beta 主要走 Xiaomi 分支
     val scrollState = rememberScrollState()
