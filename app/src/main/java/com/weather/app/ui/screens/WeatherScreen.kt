@@ -332,14 +332,25 @@ private fun XiaomiSuccessContent(
                                         y = h - ((t - minT) / tRange * (h - 16f) + 8f).toFloat()
                                     )
                                 }
-                                val path = GPath()
-                                path.moveTo(pts[0].x, pts[0].y)
-                                for (i in 1 until pts.size) {
-                                    val cx = (pts[i-1].x + pts[i].x) / 2f
-                                    path.cubicTo(cx, pts[i-1].y, cx, pts[i].y, pts[i].x, pts[i].y)
+                                // 按温度渐变颜色：低温蓝→高温橙红
+                                fun tempColor(t: Double): androidx.compose.ui.graphics.Color {
+                                    val ratio = ((t - minT) / tRange).toFloat().coerceIn(0f, 1f)
+                                    return androidx.compose.ui.graphics.Color(
+                                        red = lerp(0x90/255f, 0xFF/255f, ratio),
+                                        green = lerp(0xCA/255f, 0x70/255f, ratio),
+                                        blue = lerp(0xF9/255f, 0x43/255f, ratio),
+                                        alpha = 1f
+                                    )
                                 }
-                                drawPath(path, color = androidx.compose.ui.graphics.Color(0xFF90CAF9), style = Stroke(width = 3f, cap = androidx.compose.ui.graphics.StrokeCap.Round))
-                                pts.forEach { pt -> drawCircle(color = androidx.compose.ui.graphics.Color.White, radius = 4f, center = pt) }
+                                for (i in 1 until pts.size) {
+                                    val segPath = GPath()
+                                    segPath.moveTo(pts[i-1].x, pts[i-1].y)
+                                    val cx = (pts[i-1].x + pts[i].x) / 2f
+                                    segPath.cubicTo(cx, pts[i-1].y, cx, pts[i].y, pts[i].x, pts[i].y)
+                                    val avgT = (curveTemps[i-1] + curveTemps[i]) / 2.0
+                                    drawPath(segPath, color = tempColor(avgT), style = Stroke(width = 3f, cap = androidx.compose.ui.graphics.StrokeCap.Round))
+                                }
+                                pts.forEachIndexed { i, pt -> drawCircle(color = tempColor(curveTemps[i]), radius = 4f, center = pt) }
                                 // 温度标注
                                 curveTemps.forEachIndexed { i, t ->
                                     val pt = pts[i]
