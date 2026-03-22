@@ -7,8 +7,7 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
-env:
-  APP_VERSION_NAME: "1.0.0"
+# Version is read from app/build.gradle.kts (versionName) at runtime
 
 jobs:
   build:
@@ -26,6 +25,24 @@ jobs:
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
+
+      - name: Detect app versionName
+        id: ver
+        run: |
+          VERSION=$(python3 - <<'PY'
+import re
+p='app/build.gradle.kts'
+text=open(p,'r',encoding='utf-8').read()
+m=re.search(r'versionName\s*=\s*"([^"]+)"', text)
+print(m.group(1) if m else '')
+PY
+          )
+          if [ -z "$VERSION" ]; then
+            echo "versionName not found" >&2
+            exit 1
+          fi
+          echo "APP_VERSION_NAME=$VERSION" >> $GITHUB_ENV
+          echo "Detected version: $VERSION"
 
       - name: Build release APK (arm64-v8a)
         run: ./gradlew assembleRelease
@@ -88,11 +105,9 @@ jobs:
           generate_release_notes: false
           body: |
             更新内容（v${{ env.APP_VERSION_NAME }}）
-            - 初始化版本：入口页（定位/选城市）
-            - 城市搜索：中文+县/市/区容错
-            - 自动定位：超时兜底，不再无限转圈
-            
-            已知问题
-            - 部分文案仍为英文（下一版修）
+            - 修复：系统返回键不再直接退出到桌面（search→weather→home）
+            - 优化：搜索页新增“使用当前位置”快捷入口
+            - 优化：中文文案补全（逐小时/7日/天气描述/按钮）
+            - 修复：启动自动恢复上次查看的城市
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

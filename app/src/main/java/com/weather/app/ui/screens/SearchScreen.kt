@@ -80,7 +80,7 @@ fun SearchScreen(viewModel: WeatherViewModel, onBack: () -> Unit) {
 
             // Quick entry: use current location
             ElevatedCard(
-                onClick = { viewModel.requestLocationPermission() },
+                onClick = { viewModel.fetchCurrentLocation() },
                 shape = RoundedCornerShape(12.dp),
                 colors = CardDefaults.elevatedCardColors(containerColor = CardWhite),
                 modifier = Modifier.fillMaxWidth()
