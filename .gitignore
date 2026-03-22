@@ -1,0 +1,18 @@
+*.iml
+.gradle
+/local.properties
+/.idea
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# Gradle wrapper jar (not needed in repo, CI downloads)
+gradle/wrapper/gradle-wrapper.jar
+android-sdk/
+cmdline.zip
+gradle-8.7/
+gradle.zip
+gradle.zip
