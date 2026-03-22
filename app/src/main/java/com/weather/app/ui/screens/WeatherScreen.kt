@@ -455,16 +455,14 @@ private fun XiaomiSuccessContent(
                                 "${day}号"
                             }
                         }
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(4.dp),
-                            modifier = Modifier.width(64.dp)
-                        ) {
-                            Text(dayLabel, color = Color.White.copy(alpha = 0.9f), fontSize = 11.sp)
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp), modifier = Modifier.width(56.dp)) {
+                            Text(dayLabel, color = TextSecondary, fontSize = 10.sp)
                             Text(weatherEmojiFromText(xiaomiWeatherDesc(wRange?.from)), fontSize = 18.sp)
                             Text(xiaomiWeatherDesc(wRange?.from), color = Color.White, fontSize = 10.sp, maxLines = 1)
-                            Text("最高 ${r?.from ?: "--"}°", color = Color(0xFFFFE082), fontSize = 12.sp, fontWeight = FontWeight.Medium)
-                            Text("最低 ${r?.to ?: "--"}°", color = Color(0xFFB3E5FC), fontSize = 11.sp)
+                            Text("${r?.from ?: "--"}°", color = Color(0xFFFFD54F), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                            Text("${r?.to ?: "--"}°", color = Color(0xFF90CAF9), fontSize = 11.sp)
+                            Text(xiaomiWeatherDesc(wRange?.to), color = TextSecondary, fontSize = 10.sp, maxLines = 1)
+                            Text(weatherEmojiFromText(xiaomiWeatherDesc(wRange?.to)), fontSize = 18.sp)
                         }
                     }
                 }
