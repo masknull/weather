@@ -57,26 +57,60 @@ import com.weather.app.ui.theme.TextSecondary
 import com.weather.app.viewmodel.WeatherUiState
 import com.weather.app.viewmodel.WeatherViewModel
 
+private data class PagerCity(
+    val id: Long,
+    val name: String,
+    val latitude: Double,
+    val longitude: Double,
+    val isCurrent: Boolean = false
+)
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun WeatherScreen(viewModel: WeatherViewModel, onSearchClick: () -> Unit) {
     val uiState by viewModel.uiState.collectAsState()
     val savedCities by viewModel.savedCities.collectAsState()
+    val lastLocation by viewModel.lastLocation.collectAsState()
     val scope = rememberCoroutineScope()
 
-    // pages: 0 = current location/city, 1..N = saved cities
-    val pageCount = maxOf(1, savedCities.size + 1)
+    val pagerCities = remember(savedCities, lastLocation) {
+        buildList {
+            val current = lastLocation
+            val savedAsPager = savedCities.map {
+                PagerCity(
+                    id = it.id,
+                    name = it.name,
+                    latitude = it.latitude,
+                    longitude = it.longitude,
+                    isCurrent = false
+                )
+            }
+            val currentPager = current?.let {
+                PagerCity(
+                    id = "current:${it.first}:${it.second}:${it.third}".hashCode().toLong(),
+                    name = it.third,
+                    latitude = it.first,
+                    longitude = it.second,
+                    isCurrent = true
+                )
+            }
+            if (currentPager != null && savedAsPager.none {
+                    kotlin.math.abs(it.latitude - currentPager.latitude) < 1e-6 &&
+                    kotlin.math.abs(it.longitude - currentPager.longitude) < 1e-6
+                }) {
+                add(currentPager)
+            }
+            addAll(savedAsPager)
+        }
+    }
+
+    val pageCount = maxOf(1, pagerCities.size)
     val pagerState = rememberPagerState(pageCount = { pageCount })
 
-    // 只在滑动完全停止后（settledPage）才触发数据请求，避免滑动中转圈
-    LaunchedEffect(pagerState.settledPage) {
-        val page = pagerState.settledPage
-        if (page > 0) {
-            val city = savedCities.getOrNull(page - 1)
-            if (city != null) viewModel.loadCity(city.latitude, city.longitude, city.name)
-        } else {
-            // 滑回第0页时恢复当前定位/上次城市
-            viewModel.restoreCurrentCity()
+    LaunchedEffect(pagerState.settledPage, pagerCities) {
+        val city = pagerCities.getOrNull(pagerState.settledPage)
+        if (city != null) {
+            viewModel.loadCity(city.latitude, city.longitude, city.name)
         }
     }
 
@@ -84,7 +118,7 @@ fun WeatherScreen(viewModel: WeatherViewModel, onSearchClick: () -> Unit) {
 
     HorizontalPager(
         state = pagerState,
-        key = { page -> if (page == 0) "current" else savedCities.getOrNull(page - 1)?.id ?: page },
+        key = { page -> pagerCities.getOrNull(page)?.id ?: page },
         modifier = Modifier.fillMaxSize().nestedScroll(object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset = Offset.Zero
         }),
@@ -107,7 +141,7 @@ fun WeatherScreen(viewModel: WeatherViewModel, onSearchClick: () -> Unit) {
                     fadeIn(tween(300)) togetherWith fadeOut(tween(200))
                 },
                 contentKey = { s ->
-                    val pageKey = if (page == 0) "current" else savedCities.getOrNull(page - 1)?.id?.toString() ?: page.toString()
+                    val pageKey = pagerCities.getOrNull(page)?.id?.toString() ?: page.toString()
                     if (s is WeatherUiState.SuccessXiaomi) "$pageKey:${s.cityName}:${s.weather.current?.pubTime}" else "$pageKey:${s::class}"
                 },
                 label = "weather_content"
@@ -115,7 +149,7 @@ fun WeatherScreen(viewModel: WeatherViewModel, onSearchClick: () -> Unit) {
                 when (state) {
                     is WeatherUiState.Idle -> IdleContent(viewModel)
                     is WeatherUiState.Loading -> LoadingContent()
-                    is WeatherUiState.SuccessXiaomi -> XiaomiSuccessContent(state, viewModel, onSearchClick, savedCities, pagerState.settledPage, pagerState.currentPageOffsetFraction)
+                    is WeatherUiState.SuccessXiaomi -> XiaomiSuccessContent(state, viewModel, onSearchClick, pagerCities, pagerState.settledPage, pagerState.currentPageOffsetFraction)
                     is WeatherUiState.Success -> LegacySuccessContent(state, viewModel, onSearchClick, savedCities)
                     is WeatherUiState.Error -> ErrorContent(state.message) { viewModel.retry() }
                 }
@@ -191,7 +225,7 @@ private fun XiaomiSuccessContent(
     state: WeatherUiState.SuccessXiaomi,
     viewModel: WeatherViewModel,
     onSearchClick: () -> Unit,
-    savedCities: List<com.weather.app.data.model.SavedCity> = emptyList(),
+    pagerCities: List<PagerCity> = emptyList(),
     currentPage: Int = 0,
     pageOffset: Float = 0f
 ) {
@@ -216,19 +250,11 @@ private fun XiaomiSuccessContent(
         Spacer(Modifier.height(16.dp))
 
         // 城市名头部：左城市名区域（左/中/右）+ 右侧按钮
-        val savedNames = savedCities.map { it.name.split(",").first().split("，").first() }
+        val pagerNames = pagerCities.map { it.name.split(",").first().split("，").first() }
         val curPage = currentPage
         val centerName = state.cityName.split(" ").first().split(",").first().split("，").first()
-        val leftName = when {
-            curPage <= 0 -> null
-            curPage == 1 -> null
-            else -> savedNames.getOrNull(curPage - 2)
-        }
-        val rightName = when {
-            curPage < 0 -> savedNames.firstOrNull()
-            curPage == 0 -> savedNames.firstOrNull()
-            else -> savedNames.getOrNull(curPage)
-        }
+        val leftName = pagerNames.getOrNull(curPage - 1)
+        val rightName = pagerNames.getOrNull(curPage + 1)
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
             // 城市名区域（占满剩余空间）
             Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
@@ -247,7 +273,7 @@ private fun XiaomiSuccessContent(
                 }
             }
             // 按钮区域（固定右侧）
-            val isSaved = savedCities.any { it.name == state.cityName }
+            val isSaved = pagerCities.any { !it.isCurrent && it.name == state.cityName }
             IconButton(onClick = { if (isSaved) viewModel.removeCurrentCity() else viewModel.saveCurrentCity() }) {
                 Icon(if (isSaved) Icons.Default.Bookmark else Icons.Default.BookmarkBorder, contentDescription = if (isSaved) "已收藏" else "收藏", tint = Color.White)
             }
