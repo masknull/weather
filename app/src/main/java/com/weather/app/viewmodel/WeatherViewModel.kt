@@ -136,6 +136,14 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    fun restoreCurrentCity() {
+        // 滑回第0页时，如果当前不是第0页的城市，重新加载上次位置
+        val last = lastLocation.value ?: return
+        val curState = _uiState.value
+        if (curState is WeatherUiState.SuccessXiaomi && curState.cityName == last.third) return
+        viewModelScope.launch { loadWeather(last.first, last.second, last.third) }
+    }
+
     fun retry() {
         _uiState.value = WeatherUiState.Idle
     }

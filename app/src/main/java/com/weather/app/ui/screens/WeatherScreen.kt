@@ -74,6 +74,9 @@ fun WeatherScreen(viewModel: WeatherViewModel, onSearchClick: () -> Unit) {
         if (page > 0) {
             val city = savedCities.getOrNull(page - 1)
             if (city != null) viewModel.loadCity(city.latitude, city.longitude, city.name)
+        } else {
+            // 滑回第0页时恢复当前定位/上次城市
+            viewModel.restoreCurrentCity()
         }
     }
 
@@ -102,7 +105,7 @@ fun WeatherScreen(viewModel: WeatherViewModel, onSearchClick: () -> Unit) {
                 transitionSpec = {
                     fadeIn(tween(300)) togetherWith fadeOut(tween(200))
                 },
-                contentKey = { s -> if (s is WeatherUiState.SuccessXiaomi) s.cityName else s::class },
+                contentKey = { s -> if (s is WeatherUiState.SuccessXiaomi) "${s.cityName}:${s.weather.current?.pubTime}" else s::class },
                 label = "weather_content"
             ) { state ->
                 when (state) {
