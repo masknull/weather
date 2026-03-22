@@ -67,7 +67,7 @@ fun IdleContent(viewModel: WeatherViewModel) {
                 ) {
                     Icon(Icons.Default.MyLocation, contentDescription = null, tint = Color.White)
                     Spacer(Modifier.width(6.dp))
-                    Text("My Location", color = Color.White)
+                    Text("我的位置", color = Color.White)
                 }
             }
         }
@@ -79,7 +79,7 @@ fun LoadingContent() {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
             CircularProgressIndicator(color = Color.White, strokeWidth = 3.dp)
-            Text("Loading weather…", color = TextSecondary, fontSize = 15.sp)
+            Text("加载中…", color = TextSecondary, fontSize = 15.sp)
         }
     }
 }

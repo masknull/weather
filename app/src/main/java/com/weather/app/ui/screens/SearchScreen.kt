@@ -55,7 +55,7 @@ fun SearchScreen(viewModel: WeatherViewModel, onBack: () -> Unit) {
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { viewModel.onSearchQueryChange(it) },
-                    placeholder = { Text("Search city…", color = TextSecondary) },
+                    placeholder = { Text("搜索城市…", color = TextSecondary) },
                     singleLine = true,
                     modifier = Modifier.weight(1f).focusRequester(focusRequester),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -81,7 +81,7 @@ fun SearchScreen(viewModel: WeatherViewModel, onBack: () -> Unit) {
             when (val state = searchState) {
                 is SearchState.Idle -> {
                     if (savedCities.isNotEmpty()) {
-                        Text("Saved Cities", color = TextSecondary, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                        Text("已保存城市", color = TextSecondary, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                         Spacer(Modifier.height(8.dp))
                         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             items(savedCities) { city ->
@@ -106,7 +106,7 @@ fun SearchScreen(viewModel: WeatherViewModel, onBack: () -> Unit) {
                 is SearchState.Results -> {
                     if (state.locations.isEmpty()) {
                         Box(Modifier.fillMaxWidth().padding(top = 48.dp), contentAlignment = Alignment.Center) {
-                            Text("No results found", color = TextSecondary)
+                            Text("没有搜到结果", color = TextSecondary)
                         }
                     } else {
                         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {

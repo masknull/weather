@@ -1,17 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Weather</string>
-    <string name="search_hint">Search city…</string>
-    <string name="location_permission_rationale">Location access lets the app show weather for your current position.</string>
-    <string name="grant_permission">Grant</string>
-    <string name="use_search">Use Search Instead</string>
-    <string name="feels_like">Feels like</string>
-    <string name="humidity">Humidity</string>
-    <string name="wind">Wind</string>
-    <string name="uv_index">UV Index</string>
-    <string name="hourly_forecast">Hourly Forecast</string>
-    <string name="daily_forecast">7-Day Forecast</string>
-    <string name="no_results">No results found</string>
-    <string name="error_loading">Failed to load weather data</string>
-    <string name="retry">Retry</string>
+    <string name="app_name">天气</string>
+
+    <string name="search_hint">搜索城市…</string>
+
+    <string name="location_permission_rationale">开启定位权限后，可以自动显示你当前位置的天气。</string>
+    <string name="grant_permission">去授权</string>
+    <string name="use_search">改用城市搜索</string>
+
+    <string name="feels_like">体感</string>
+    <string name="humidity">湿度</string>
+    <string name="wind">风速</string>
+    <string name="uv_index">紫外线</string>
+
+    <string name="hourly_forecast">逐小时预报</string>
+    <string name="daily_forecast">7日预报</string>
+
+    <string name="no_results">没有搜到结果</string>
+    <string name="error_loading">天气加载失败</string>
+    <string name="retry">重试</string>
+
+    <string name="my_location">我的位置</string>
+    <string name="loading">加载中…</string>
+    <string name="saved_cities">已保存城市</string>
+    <string name="search_to_start">先搜索一个城市开始使用</string>
 </resources>

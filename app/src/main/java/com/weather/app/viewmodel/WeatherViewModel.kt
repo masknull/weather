@@ -77,12 +77,12 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
                     cts.token
                 ).await()
                 if (location != null) {
-                    loadWeather(location.latitude, location.longitude, "My Location")
+                    loadWeather(location.latitude, location.longitude, "我的位置")
                 } else {
-                    _uiState.value = WeatherUiState.Error("Could not get location")
+                    _uiState.value = WeatherUiState.Error("无法获取定位")
                 }
             } catch (e: Exception) {
-                _uiState.value = WeatherUiState.Error(e.message ?: "Location error")
+                _uiState.value = WeatherUiState.Error(e.message ?: "定位失败")
             }
         }
     }
