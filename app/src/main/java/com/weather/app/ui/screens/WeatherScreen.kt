@@ -1,6 +1,7 @@
 package com.weather.app.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -84,11 +85,25 @@ fun LoadingContent() {
 
 @Composable
 fun ErrorContent(message: String, onRetry: () -> Unit) {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        val clipboard = LocalClipboardManager.current
-        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text("⚠️", fontSize = 48.sp)
-            Text(message, color = Color.White, modifier = Modifier.padding(horizontal = 16.dp))
+    val clipboard = LocalClipboardManager.current
+    val scroll = rememberScrollState()
+    Box(Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+                .verticalScroll(scroll),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Spacer(Modifier.height(24.dp))
+            Text("⚠️ 错误详情", fontSize = 28.sp, color = Color.White)
+            Text(
+                text = message,
+                color = Color.White,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+            )
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Button(onClick = onRetry, colors = ButtonDefaults.buttonColors(containerColor = CardWhite)) {
                     Text("重试", color = Color.White)
