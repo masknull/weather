@@ -81,7 +81,8 @@ fun WeatherScreen(viewModel: WeatherViewModel, onSearchClick: () -> Unit) {
         flingBehavior = PagerDefaults.flingBehavior(
             state = pagerState,
             snapAnimationSpec = spring(dampingRatio = 0.85f, stiffness = 150f),
-            snapPositionalThreshold = 0.15f
+            snapPositionalThreshold = 0.1f,
+            snapVelocityThreshold = 100.dp
         )
     ) { _ ->
         Box(
@@ -230,7 +231,7 @@ private fun XiaomiSuccessContent(
 
         Spacer(Modifier.height(16.dp))
 
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(Modifier.fillMaxWidth().height(androidx.compose.foundation.layout.IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             StatTile("体感", (current?.feelsLike?.value ?: "--") + "°", "🌡️", Modifier.weight(1f))
             StatTile("湿度", (current?.humidity?.value ?: "--") + "%", "💧", Modifier.weight(1f))
             val sunrise = state.weather.forecastDaily?.sunRiseSet?.value?.firstOrNull()?.from?.substringAfter("T")?.take(5) ?: "--"
