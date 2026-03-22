@@ -16,7 +16,9 @@ import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -36,7 +38,7 @@ import com.weather.app.ui.theme.TextSecondary
 import com.weather.app.viewmodel.WeatherUiState
 import com.weather.app.viewmodel.WeatherViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun WeatherScreen(viewModel: WeatherViewModel, onSearchClick: () -> Unit) {
     val uiState by viewModel.uiState.collectAsState()
@@ -206,8 +208,16 @@ private fun XiaomiSuccessContent(
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             StatTile("体感", (current?.feelsLike?.value ?: "--") + "°", "🌡️", Modifier.weight(1f))
-            StatTile("湿度", (current?.humidity?.value ?: "--") + "%", "💧", Modifier.weight(1f))
             StatTile("风速", (current?.wind?.speed?.value ?: "--") + (current?.wind?.speed?.unit ?: ""), "💨", Modifier.weight(1f))
+            val sunrise = state.weather.forecastDaily?.sunRiseSet?.value?.firstOrNull()?.from?.take(5) ?: "--"
+            val sunset = state.weather.forecastDaily?.sunRiseSet?.value?.firstOrNull()?.to?.take(5) ?: "--"
+            StatTile("日出日落", "$sunrise/$sunset", "🌅", Modifier.weight(1f))
+        }
+        Spacer(Modifier.height(4.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            StatTile("湿度", (current?.humidity?.value ?: "--") + "%", "💧", Modifier.weight(1f))
+            StatTile("气压", (current?.pressure?.value ?: "--") + (current?.pressure?.unit ?: ""), "🌬️", Modifier.weight(1f))
+            StatTile("能见度", (current?.visibility?.value?.let { if (it.isBlank()) "--" else it } ?: "--") + (current?.visibility?.unit ?: ""), "👁️", Modifier.weight(1f))
         }
 
         Spacer(Modifier.height(12.dp))
@@ -218,8 +228,14 @@ private fun XiaomiSuccessContent(
         if (hTimes.isNotEmpty() && hTemps.isNotEmpty()) {
             GlassCard(Modifier.fillMaxWidth()) {
                 val hPrecip = state.weather.forecastHourly?.precipitationProbability?.value.orEmpty()
-                val precipDesc = state.weather.forecastHourly?.precipitationProbability?.desc
-                Text("24小时预报" + if (!precipDesc.isNullOrBlank()) "  $precipDesc" else "", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                val hPrecipTimes = hourlySeriesTemp?.time.orEmpty()
+                val firstRainIdx = hPrecip.indexOfFirst { it.toInt() > 0 }
+                val rainHint = if (firstRainIdx >= 0) {
+                    val t = hPrecipTimes.getOrNull(firstRainIdx) ?: ""
+                    val hh = t.substringAfter("T").take(5).ifBlank { t.take(5) }
+                    "预计 $hh 有雨"
+                } else ""
+                Text("24小时预报" + if (rainHint.isNotBlank()) "  ☔ $rainHint" else "", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Medium)
                 Spacer(Modifier.height(12.dp))
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
                     val count = minOf(24, hTimes.size, hTemps.size)

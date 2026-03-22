@@ -30,8 +30,12 @@ data class XiaomiCurrent(
     val temperature: XiaomiUnitValue? = null,
     val feelsLike: XiaomiUnitValue? = null,
     val humidity: XiaomiUnitValue? = null,
+    val pressure: XiaomiUnitValue? = null,
+    val visibility: XiaomiUnitValue? = null,
     val weather: String? = null,
     val wind: XiaomiWind? = null,
+    val pubTime: String? = null,
+    val uvIndex: String? = null,
 )
 
 @Serializable
