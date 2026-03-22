@@ -11,6 +11,7 @@ import com.weather.app.data.model.*
 import com.weather.app.data.repository.WeatherRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.tasks.await
 
 sealed interface WeatherUiState {
@@ -36,6 +37,9 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
     private val fusedLocation = LocationServices.getFusedLocationProviderClient(application)
     private var permissionLauncher: ((Array<String>) -> Unit)? = null
 
+    private val _permissionGranted = MutableStateFlow(false)
+    val permissionGranted: StateFlow<Boolean> = _permissionGranted.asStateFlow()
+
     private val _uiState = MutableStateFlow<WeatherUiState>(WeatherUiState.Idle)
     val uiState: StateFlow<WeatherUiState> = _uiState.asStateFlow()
 
@@ -53,8 +57,9 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun onLocationPermissionResult(granted: Boolean) {
+        _permissionGranted.value = granted
         if (granted) fetchCurrentLocation()
-        else _uiState.value = WeatherUiState.Idle
+        else _uiState.value = WeatherUiState.Error("未授予定位权限，可选择城市继续使用")
     }
 
     fun requestLocationPermission() {
@@ -71,18 +76,22 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             _uiState.value = WeatherUiState.Loading
             try {
+                // Hard timeout to avoid endless spinner
                 val cts = CancellationTokenSource()
-                val location = fusedLocation.getCurrentLocation(
-                    Priority.PRIORITY_BALANCED_POWER_ACCURACY,
-                    cts.token
-                ).await()
+                val location = kotlinx.coroutines.withTimeoutOrNull(8000) {
+                    fusedLocation.getCurrentLocation(
+                        Priority.PRIORITY_BALANCED_POWER_ACCURACY,
+                        cts.token
+                    ).await()
+                }
                 if (location != null) {
                     loadWeather(location.latitude, location.longitude, "我的位置")
+                    repo.saveLastLocation(location.latitude, location.longitude, "我的位置")
                 } else {
-                    _uiState.value = WeatherUiState.Error("无法获取定位")
+                    _uiState.value = WeatherUiState.Error("定位超时或不可用，请打开系统定位或手动选择城市")
                 }
             } catch (e: Exception) {
-                _uiState.value = WeatherUiState.Error(e.message ?: "定位失败")
+                _uiState.value = WeatherUiState.Error("定位失败：${e.message ?: "未知错误"}")
             }
         }
     }

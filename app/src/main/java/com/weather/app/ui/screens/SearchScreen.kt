@@ -94,7 +94,7 @@ fun SearchScreen(viewModel: WeatherViewModel, onBack: () -> Unit) {
                         }
                     } else {
                         Box(Modifier.fillMaxWidth().padding(top = 48.dp), contentAlignment = Alignment.Center) {
-                            Text("Search for a city to get started", color = TextSecondary)
+                            Text("先搜索一个城市开始使用", color = TextSecondary)
                         }
                     }
                 }

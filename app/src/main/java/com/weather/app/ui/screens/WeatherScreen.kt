@@ -58,8 +58,8 @@ fun IdleContent(viewModel: WeatherViewModel) {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(24.dp)) {
             Text("🌤️", fontSize = 80.sp)
-            Text("Weather", color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Bold)
-            Text("Search a city or use your location", color = TextSecondary, fontSize = 15.sp)
+            Text("天气", color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Bold)
+            Text("选择城市或使用当前位置", color = TextSecondary, fontSize = 15.sp)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Button(
                     onClick = { viewModel.fetchCurrentLocation() },
@@ -91,7 +91,7 @@ fun ErrorContent(message: String, onRetry: () -> Unit) {
             Text("⚠️", fontSize = 48.sp)
             Text(message, color = Color.White, textAlign = TextAlign.Center, modifier = Modifier.padding(horizontal = 32.dp))
             Button(onClick = onRetry, colors = ButtonDefaults.buttonColors(containerColor = CardWhite)) {
-                Text("Retry", color = Color.White)
+                Text("重试", color = Color.White)
             }
         }
     }

@@ -43,6 +43,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             WeatherTheme {
                 var route by remember { mutableStateOf("home") }
+                val uiState by viewModel.uiState.collectAsState()
 
                 AnimatedContent(
                     targetState = route,
@@ -53,8 +54,11 @@ class MainActivity : ComponentActivity() {
                 ) { r ->
                     when (r) {
                         "home" -> HomeScreen(
+                            message = when (uiState) {
+                                is com.weather.app.viewmodel.WeatherUiState.Error -> (uiState as com.weather.app.viewmodel.WeatherUiState.Error).message
+                                else -> null
+                            },
                             onUseLocation = {
-                                // placeholder: next commit will request permission and fetch location
                                 viewModel.requestLocationPermission()
                             },
                             onChooseCity = { route = "search" }
@@ -63,10 +67,20 @@ class MainActivity : ComponentActivity() {
                             viewModel = viewModel,
                             onBack = { route = "home" }
                         )
-                        else -> WeatherScreen(
+                        "weather" -> WeatherScreen(
                             viewModel = viewModel,
                             onSearchClick = { route = "search" }
                         )
+                        else -> HomeScreen(
+                            onUseLocation = { viewModel.requestLocationPermission() },
+                            onChooseCity = { route = "search" }
+                        )
+                    }
+                }
+
+                LaunchedEffect(uiState) {
+                    if (uiState is com.weather.app.viewmodel.WeatherUiState.Success) {
+                        route = "weather"
                     }
                 }
             }

@@ -22,6 +22,7 @@ import com.weather.app.ui.theme.SkyNightLight
 fun HomeScreen(
     onUseLocation: () -> Unit,
     onChooseCity: () -> Unit,
+    message: String? = null,
 ) {
     Box(
         modifier = Modifier
@@ -48,6 +49,21 @@ fun HomeScreen(
             )
 
             Spacer(Modifier.height(12.dp))
+
+            if (!message.isNullOrBlank()) {
+                ElevatedCard(
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.elevatedCardColors(containerColor = Color.White.copy(alpha = 0.10f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = message,
+                        color = Color.White.copy(alpha = 0.9f),
+                        fontSize = 13.sp,
+                        modifier = Modifier.padding(14.dp)
+                    )
+                }
+            }
 
             EntryCard(
                 title = "使用当前位置",
