@@ -144,7 +144,7 @@ private fun XiaomiSuccessContent(
 
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = state.cityName.split(" ").last().split(",").last().split("，").last(),
+                text = state.cityName.split(" ").first().split(",").first().split("，").first(),
                 color = Color.White,
                 fontSize = 28.sp,
                 fontWeight = FontWeight.SemiBold,
