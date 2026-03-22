@@ -82,6 +82,7 @@ jobs:
           tag_name: v${{ github.run_number }}
           name: "Weather v${{ github.run_number }}"
           files: app/build/outputs/apk/release/*arm64*.apk
-          generate_release_notes: true
+          generate_release_notes: false
+          body: "Automated build."
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
