@@ -21,6 +21,9 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.graphics.Path as GPath
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
@@ -262,7 +265,41 @@ private fun XiaomiSuccessContent(
                     "预计 $hh 有雨"
                 } else ""
                 Text("24小时预报" + if (rainHint.isNotBlank()) "  ☔ $rainHint" else "", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Medium)
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(8.dp))
+                val curveTemps = hourlySeriesTemp?.value.orEmpty().take(24)
+                if (curveTemps.size >= 2) {
+                    val minT = curveTemps.min()
+                    val maxT = curveTemps.max()
+                    val tRange = (maxT - minT).coerceAtLeast(1.0)
+                    val itemW = 60.dp
+                    val curveH = 48.dp
+                    Canvas(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(curveH)
+                    ) {
+                        val w = size.width
+                        val h = size.height
+                        val step = w / (curveTemps.size - 1)
+                        val pts = curveTemps.mapIndexed { i, t ->
+                            Offset(
+                                x = i * step,
+                                y = h - ((t - minT) / tRange * (h - 12f) + 6f).toFloat()
+                            )
+                        }
+                        val path = GPath()
+                        path.moveTo(pts[0].x, pts[0].y)
+                        for (i in 1 until pts.size) {
+                            val cx = (pts[i-1].x + pts[i].x) / 2f
+                            path.cubicTo(cx, pts[i-1].y, cx, pts[i].y, pts[i].x, pts[i].y)
+                        }
+                        drawPath(path, color = androidx.compose.ui.graphics.Color(0xFF90CAF9), style = Stroke(width = 3f))
+                        pts.forEach { pt ->
+                            drawCircle(color = androidx.compose.ui.graphics.Color.White, radius = 3f, center = pt)
+                        }
+                    }
+                }
+                Spacer(Modifier.height(4.dp))
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
                     val count = minOf(24, hTimes.size, hTemps.size)
                     items(count) { idx ->
