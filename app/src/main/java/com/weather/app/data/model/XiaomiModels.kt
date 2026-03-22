@@ -108,14 +108,15 @@ data class XiaomiDailyWind(
 
 @Serializable
 data class XiaomiAqi(
-    val aqi: XiaomiAqiValue? = null,
-)
-
-@Serializable
-data class XiaomiAqiValue(
-    val value: String? = null,
-    val level: String? = null,
-    val desc: String? = null,
+    val aqi: String? = null,
+    val primary: String? = null,
+    val suggest: String? = null,
+    val pm25Desc: String? = null,
+    val pm10Desc: String? = null,
+    val no2Desc: String? = null,
+    val so2Desc: String? = null,
+    val coDesc: String? = null,
+    val o3Desc: String? = null,
 )
 
 @Serializable

@@ -128,7 +128,7 @@ private fun XiaomiSuccessContent(
     val hourlySeriesTemp = state.weather.forecastHourly?.temperature
     val hourlySeriesWeather = state.weather.forecastHourly?.weather
 
-    val aqi = state.weather.aqi?.aqi
+    val aqi = state.weather.aqi
     val alerts = state.weather.alerts.orEmpty()
     val indices = state.weather.indices?.indices.orEmpty()
 
@@ -225,7 +225,9 @@ private fun XiaomiSuccessContent(
             GlassCard(Modifier.fillMaxWidth()) {
                 Text("空气质量", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Medium)
                 Spacer(Modifier.height(8.dp))
-                Text("AQI：${aqi.value ?: "--"}  ${aqi.level ?: ""}  ${aqi.desc ?: ""}", color = Color.White)
+                Text("AQI：${aqi.aqi ?: "--"}", color = Color.White)
+                if (!aqi.primary.isNullOrBlank()) Text("首要污染物：${aqi.primary}", color = TextSecondary)
+                if (!aqi.suggest.isNullOrBlank()) Text(aqi.suggest!!, color = TextSecondary)
             }
             Spacer(Modifier.height(12.dp))
         }
