@@ -84,6 +84,7 @@ data class XiaomiSeries(
     val value: List<Double>? = null,
     val from: String? = null,
     val pubTime: String? = null,
+    val desc: String? = null,
 )
 
 @Serializable
