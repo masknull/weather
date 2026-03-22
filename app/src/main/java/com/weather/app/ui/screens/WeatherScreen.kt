@@ -416,7 +416,7 @@ private fun XiaomiSuccessContent(
                     drawCurve(lowPts, androidx.compose.ui.graphics.Color(0xFF90CAF9))
                 }
                 Spacer(Modifier.height(4.dp))
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(count) { i ->
                         val r = dRanges.getOrNull(i)
                         val wRange = dWeathers.getOrNull(i)
