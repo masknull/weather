@@ -68,12 +68,6 @@ fun WeatherScreen(viewModel: WeatherViewModel, onSearchClick: () -> Unit) {
     val pageCount = maxOf(1, savedCities.size + 1)
     val pagerState = rememberPagerState(pageCount = { pageCount })
 
-    // when uiState changes to new city, jump to page 0
-    LaunchedEffect(uiState) {
-        if (pagerState.currentPage != 0) scope.launch { pagerState.animateScrollToPage(0) }
-    }
-
-    // when user swipes to saved city page, load it
     // 只在滑动完全停止后（settledPage）才触发数据请求，避免滑动中转圈
     LaunchedEffect(pagerState.settledPage) {
         val page = pagerState.settledPage
