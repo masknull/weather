@@ -207,7 +207,19 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    private fun isValidLatLon(lat: Double, lon: Double): Boolean {
+        if (lat.isNaN() || lon.isNaN()) return false
+        if (lat !in -90.0..90.0) return false
+        if (lon !in -180.0..180.0) return false
+        if (kotlin.math.abs(lat) < 1e-9 && kotlin.math.abs(lon) < 1e-9) return false
+        return true
+    }
+
     private suspend fun loadWeather(lat: Double, lon: Double, name: String) {
+        if (!isValidLatLon(lat, lon)) {
+            _uiState.value = WeatherUiState.Error("坐标无效（$lat,$lon），请重新定位或手动选择城市")
+            return
+        }
         _uiState.value = WeatherUiState.Loading
         repo.getXiaomiWeather(lat, lon).fold(
             onSuccess = { _uiState.value = WeatherUiState.SuccessXiaomi(name, it) },
