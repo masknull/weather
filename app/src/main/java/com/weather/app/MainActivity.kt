@@ -9,6 +9,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.animation.*
 import androidx.compose.runtime.*
+import com.weather.app.ui.screens.HomeScreen
 import com.weather.app.ui.screens.SearchScreen
 import com.weather.app.ui.screens.WeatherScreen
 import com.weather.app.ui.theme.WeatherTheme
@@ -41,27 +42,30 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             WeatherTheme {
-                var showSearch by remember { mutableStateOf(false) }
+                var route by remember { mutableStateOf("home") }
+
                 AnimatedContent(
-                    targetState = showSearch,
+                    targetState = route,
                     transitionSpec = {
-                        if (targetState) {
-                            slideInHorizontally { it } togetherWith slideOutHorizontally { -it }
-                        } else {
-                            slideInHorizontally { -it } togetherWith slideOutHorizontally { it }
-                        }
+                        slideInHorizontally { it / 2 } togetherWith slideOutHorizontally { -it / 2 }
                     },
-                    label = "screen_transition"
-                ) { isSearch ->
-                    if (isSearch) {
-                        SearchScreen(
-                            viewModel = viewModel,
-                            onBack = { showSearch = false }
+                    label = "route"
+                ) { r ->
+                    when (r) {
+                        "home" -> HomeScreen(
+                            onUseLocation = {
+                                // placeholder: next commit will request permission and fetch location
+                                viewModel.requestLocationPermission()
+                            },
+                            onChooseCity = { route = "search" }
                         )
-                    } else {
-                        WeatherScreen(
+                        "search" -> SearchScreen(
                             viewModel = viewModel,
-                            onSearchClick = { showSearch = true }
+                            onBack = { route = "home" }
+                        )
+                        else -> WeatherScreen(
+                            viewModel = viewModel,
+                            onSearchClick = { route = "search" }
                         )
                     }
                 }
