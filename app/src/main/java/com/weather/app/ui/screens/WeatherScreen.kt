@@ -145,8 +145,6 @@ fun ErrorContent(message: String, onRetry: () -> Unit) {
             }
         }
     }
-    } // HorizontalPager page
-    } // HorizontalPager
 }
 
 @Composable
