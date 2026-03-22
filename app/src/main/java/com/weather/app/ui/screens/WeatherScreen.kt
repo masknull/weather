@@ -347,18 +347,6 @@ private fun XiaomiSuccessContent(
                                     drawPath(segPath, color = tempColor(avgT), style = Stroke(width = 3f, cap = androidx.compose.ui.graphics.StrokeCap.Round))
                                 }
                                 pts.forEachIndexed { i, pt -> drawCircle(color = tempColor(curveTemps[i]), radius = 4f, center = pt) }
-                                // 温度标注
-                                // 温度标注用 nativeCanvas via drawContext
-                                val paint = android.graphics.Paint().apply {
-                                    color = android.graphics.Color.WHITE
-                                    textSize = 28f
-                                    textAlign = android.graphics.Paint.Align.CENTER
-                                    isAntiAlias = true
-                                }
-                                curveTemps.forEachIndexed { i, t ->
-                                    val pt = pts[i]
-                                    drawContext.canvas.nativeCanvas.drawText("${t.toInt()}°", pt.x, pt.y - 10f, paint)
-                                }
                             }
                         }
                         // 时间/天气行
@@ -371,7 +359,9 @@ private fun XiaomiSuccessContent(
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     verticalArrangement = Arrangement.spacedBy(2.dp)
                                 ) {
-                                    Text(hTimes.getOrNull(idx) ?: "", color = Color.White.copy(alpha=0.9f), fontSize = 11.sp)
+                                    val t = curveTemps.getOrNull(idx)
+                                    if (t != null) Text("${t.toInt()}°", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                                    Text(hTimes.getOrNull(idx) ?: "", color = Color.White.copy(alpha=0.7f), fontSize = 10.sp)
                                     Text(weatherEmojiFromText(xiaomiWeatherDesc(hWeathers.getOrNull(idx))), fontSize = 20.sp)
                                     if (precipPct > 0) Text("${precipPct}%", color = Color(0xFF90CAF9), fontSize = 10.sp)
                                 }
