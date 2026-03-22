@@ -194,10 +194,12 @@ private fun XiaomiSuccessContent(
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
                     val count = minOf(24, hTimes.size, hTemps.size)
                     items(count) { idx ->
+                        val precipPct = hPrecip.getOrNull(idx)?.let { it.toInt() } ?: 0
                         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(hTimes.getOrNull(idx) ?: "", color = TextSecondary, fontSize = 12.sp)
-                            Text(weatherEmojiFromText(hWeathers.getOrNull(idx)), fontSize = 22.sp)
+                            Text(weatherEmojiFromText(xiaomiWeatherDesc(hWeathers.getOrNull(idx))), fontSize = 22.sp)
                             Text(((hourlySeriesTemp?.value?.getOrNull(idx) ?: Double.NaN).let { if (it.isNaN()) "--" else it.toInt().toString() }) + "°", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                            if (precipPct > 0) Text("${precipPct}%", color = Color(0xFF90CAF9), fontSize = 11.sp)
                         }
                     }
                 }
