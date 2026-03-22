@@ -178,6 +178,20 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch { repo.removeCity(cityId) }
     }
 
+    fun removeCurrentCity() {
+        val lat = currentLat
+        val lon = currentLon
+        val state = _uiState.value
+        val name = when (state) {
+            is WeatherUiState.SuccessXiaomi -> state.cityName
+            is WeatherUiState.Success -> state.cityName
+            else -> null
+        } ?: return
+        if (lat == 0.0 && lon == 0.0) return
+        val cityId = "$name:$lat:$lon".hashCode().toLong()
+        viewModelScope.launch { repo.removeCity(cityId) }
+    }
+
     fun onSearchQueryChange(query: String) {
         _searchQuery.value = query
         val q = query.trim()

@@ -73,7 +73,7 @@ fun skyGradient(weatherCode: Int, isDay: Boolean): Brush {
     return if (!isDay) {
         Brush.verticalGradient(listOf(Color(0xFF0D1B3E), Color(0xFF1A2F5E)))
     } else when (weatherCode) {
-        0, 1 -> Brush.verticalGradient(listOf(Color(0xFF1C8DFF), Color(0xFF5BC8FA)))
+        0, 1 -> Brush.verticalGradient(listOf(Color(0xFF3B8DFF), Color(0xFF7FD3FF)))
         2, 3 -> Brush.verticalGradient(listOf(Color(0xFF4A7FA5), Color(0xFF7BAEC8)))
         45, 48 -> Brush.verticalGradient(listOf(Color(0xFF6B7B8D), Color(0xFF9AAAB8)))
         in 51..82 -> Brush.verticalGradient(listOf(Color(0xFF3A5F7D), Color(0xFF5A8AA0)))

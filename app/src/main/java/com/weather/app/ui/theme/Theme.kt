@@ -12,9 +12,9 @@ val SkyNightLight = Color(0xFF1A2F5E)
 val CloudGray = Color(0xFFB0C4DE)
 val SunYellow = Color(0xFFFFD60A)
 val RainBlue = Color(0xFF5AC8FA)
-val CardWhite = Color(0x33FFFFFF)  // semi-transparent white for cards
+val CardWhite = Color(0x1AFFFFFF)  // lighter, less intrusive card layer
 val TextPrimary = Color.White
-val TextSecondary = Color(0xCCFFFFFF)
+val TextSecondary = Color(0xF2FFFFFF)
 
 private val WeatherColorScheme = darkColorScheme(
     primary = SkyBlue,
