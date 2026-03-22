@@ -20,6 +20,12 @@ data class XiaomiUnitValue(
 )
 
 @Serializable
+data class XiaomiRangeValue(
+    val from: String? = null,
+    val to: String? = null,
+)
+
+@Serializable
 data class XiaomiCurrent(
     val temperature: XiaomiUnitValue? = null,
     val feelsLike: XiaomiUnitValue? = null,
@@ -48,11 +54,12 @@ data class XiaomiForecastHourly(
 @Serializable
 data class XiaomiForecastDaily(
     val status: Int? = null,
-    val temperature: XiaomiDailyTemperatureSeries? = null,
-    val weather: XiaomiSeries? = null,
+    val temperature: XiaomiRangeSeries? = null,
+    val weather: XiaomiRangeSeries? = null,
     val aqi: XiaomiSeries? = null,
-    val wind: XiaomiSeries? = null,
-    val precipitationProbability: XiaomiSeries? = null,
+    val wind: XiaomiDailyWind? = null,
+    val precipitationProbability: XiaomiStringSeries? = null,
+    val sunRiseSet: XiaomiRangeSeries? = null,
     val pubTime: String? = null,
 )
 
@@ -67,16 +74,23 @@ data class XiaomiSeries(
 )
 
 @Serializable
-data class XiaomiDailyTemperatureSeries(
+data class XiaomiStringSeries(
     val status: Int? = null,
     val unit: String? = null,
-    val value: List<XiaomiTempRange>? = null,
+    val value: List<String>? = null,
 )
 
 @Serializable
-data class XiaomiTempRange(
-    val from: String? = null,
-    val to: String? = null,
+data class XiaomiRangeSeries(
+    val status: Int? = null,
+    val unit: String? = null,
+    val value: List<XiaomiRangeValue>? = null,
+)
+
+@Serializable
+data class XiaomiDailyWind(
+    val direction: XiaomiRangeSeries? = null,
+    val speed: XiaomiRangeSeries? = null,
 )
 
 @Serializable
