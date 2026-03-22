@@ -9,6 +9,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.animation.*
 import androidx.compose.runtime.*
+import androidx.activity.compose.BackHandler
 import com.weather.app.ui.screens.HomeScreen
 import com.weather.app.ui.screens.SearchScreen
 import com.weather.app.ui.screens.WeatherScreen
@@ -76,6 +77,15 @@ class MainActivity : ComponentActivity() {
                             onUseLocation = { viewModel.requestLocationPermission() },
                             onChooseCity = { route = "search" }
                         )
+                    }
+                }
+
+                // System back behavior
+                BackHandler(enabled = true) {
+                    when (route) {
+                        "search" -> route = "weather"
+                        "weather" -> route = "home"
+                        else -> finish()
                     }
                 }
 

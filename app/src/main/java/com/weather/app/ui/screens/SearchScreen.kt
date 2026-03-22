@@ -50,7 +50,7 @@ fun SearchScreen(viewModel: WeatherViewModel, onBack: () -> Unit) {
             // Search bar
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+                    Icon(Icons.Default.ArrowBack, contentDescription = "返回", tint = Color.White)
                 }
                 OutlinedTextField(
                     value = searchQuery,
@@ -74,6 +74,29 @@ fun SearchScreen(viewModel: WeatherViewModel, onBack: () -> Unit) {
                         }
                     }
                 )
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            // Quick entry: use current location
+            ElevatedCard(
+                onClick = { viewModel.requestLocationPermission() },
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.elevatedCardColors(containerColor = CardWhite),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.MyLocation, contentDescription = null, tint = Color.White)
+                    Spacer(Modifier.width(10.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text("使用当前位置", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                        Spacer(Modifier.height(2.dp))
+                        Text("自动定位并查看天气", color = TextSecondary, fontSize = 12.sp)
+                    }
+                }
             }
 
             Spacer(Modifier.height(16.dp))
@@ -159,7 +182,7 @@ fun SavedCityRow(city: SavedCity, onClick: () -> Unit, onDelete: () -> Unit) {
         Spacer(Modifier.width(12.dp))
         Text(city.name, color = Color.White, fontSize = 15.sp, modifier = Modifier.weight(1f))
         IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
-            Icon(Icons.Default.Delete, contentDescription = "Remove", tint = TextSecondary, modifier = Modifier.size(16.dp))
+            Icon(Icons.Default.Delete, contentDescription = "删除", tint = TextSecondary, modifier = Modifier.size(16.dp))
         }
     }
 }

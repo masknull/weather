@@ -171,7 +171,7 @@ fun SuccessContent(state: WeatherUiState.Success, viewModel: WeatherViewModel, o
 @Composable
 fun HourlyForecastCard(forecast: ForecastResponse) {
     GlassCard(Modifier.fillMaxWidth()) {
-        Text("HOURLY FORECAST", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+        Text("逐小时预报", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Medium)
         Spacer(Modifier.height(12.dp))
         val now = LocalDateTime.now()
         val hourFormatter = DateTimeFormatter.ofPattern("ha", Locale.US)
@@ -187,7 +187,7 @@ fun HourlyForecastCard(forecast: ForecastResponse) {
                 val idx = startIdx + i
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        text = if (i == 0) "Now" else try { LocalDateTime.parse(times[idx]).format(hourFormatter) } catch (e: Exception) { "" },
+                        text = if (i == 0) "现在" else try { LocalDateTime.parse(times[idx]).format(hourFormatter) } catch (e: Exception) { "" },
                         color = TextSecondary, fontSize = 12.sp
                     )
                     Text(weatherEmoji(codes[idx]), fontSize = 22.sp)
@@ -201,7 +201,7 @@ fun HourlyForecastCard(forecast: ForecastResponse) {
 @Composable
 fun DailyForecastCard(forecast: ForecastResponse) {
     GlassCard(Modifier.fillMaxWidth()) {
-        Text("7-DAY FORECAST", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+        Text("7日预报", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Medium)
         Spacer(Modifier.height(12.dp))
         val dayFormatter = DateTimeFormatter.ofPattern("EEE", Locale.US)
         forecast.daily.time.forEachIndexed { i, dateStr ->
@@ -211,7 +211,7 @@ fun DailyForecastCard(forecast: ForecastResponse) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = if (i == 0) "Today" else try { java.time.LocalDate.parse(dateStr).format(dayFormatter) } catch (e: Exception) { dateStr },
+                    text = if (i == 0) "今天" else try { java.time.LocalDate.parse(dateStr).format(dayFormatter) } catch (e: Exception) { dateStr },
                     color = Color.White, fontSize = 15.sp, modifier = Modifier.width(64.dp)
                 )
                 Text(weatherEmoji(forecast.daily.weatherCode[i]), fontSize = 20.sp, modifier = Modifier.width(36.dp))
