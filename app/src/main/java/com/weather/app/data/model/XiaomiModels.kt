@@ -15,13 +15,26 @@ data class XiaomiWeatherResponse(
 )
 
 @Serializable
+@Serializable
+sealed class XiaomiValue {
+    abstract val value: String?
+    abstract val unit: String?
+}
+
+@Serializable
+data class XiaomiUnitValue(
+    override val unit: String? = null,
+    override val value: String? = null,
+) : XiaomiValue()
+
+@Serializable
 data class XiaomiCurrent(
-    val temperature: String? = null,
-    val feelsLike: String? = null,
-    val humidity: String? = null,
+    val temperature: XiaomiUnitValue? = null,
+    val feelsLike: XiaomiUnitValue? = null,
+    val humidity: XiaomiUnitValue? = null,
     val weather: String? = null,
     val windDirection: String? = null,
-    val windSpeed: String? = null,
+    val windSpeed: XiaomiUnitValue? = null,
 )
 
 @Serializable
@@ -33,7 +46,7 @@ data class XiaomiForecastHourly(
 data class XiaomiHourlyItem(
     val time: String? = null,
     val weather: String? = null,
-    val temperature: String? = null,
+    val temperature: XiaomiUnitValue? = null,
 )
 
 @Serializable
@@ -45,8 +58,8 @@ data class XiaomiForecastDaily(
 data class XiaomiDailyItem(
     val date: String? = null,
     val weather: String? = null,
-    val tempMax: String? = null,
-    val tempMin: String? = null,
+    val tempMax: XiaomiUnitValue? = null,
+    val tempMin: XiaomiUnitValue? = null,
 )
 
 @Serializable

@@ -135,7 +135,7 @@ private fun XiaomiSuccessContent(
             }
         }
 
-        val temp = current?.temperature ?: "--"
+        val temp = current?.temperature?.value ?: "--"
         Text(
             text = "$temp°",
             color = Color.White,
@@ -152,9 +152,9 @@ private fun XiaomiSuccessContent(
         Spacer(Modifier.height(16.dp))
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            StatTile("体感", (current?.feelsLike ?: "--") + "°", "🌡️", Modifier.weight(1f))
-            StatTile("湿度", (current?.humidity ?: "--") + "%", "💧", Modifier.weight(1f))
-            StatTile("风速", (current?.windSpeed ?: "--"), "💨", Modifier.weight(1f))
+            StatTile("体感", (current?.feelsLike?.value ?: "--") + "°", "🌡️", Modifier.weight(1f))
+            StatTile("湿度", (current?.humidity?.value ?: "--") + "%", "💧", Modifier.weight(1f))
+            StatTile("风速", (current?.windSpeed?.value ?: "--") + (current?.windSpeed?.unit ?: ""), "💨", Modifier.weight(1f))
         }
 
         Spacer(Modifier.height(12.dp))
@@ -168,7 +168,7 @@ private fun XiaomiSuccessContent(
                         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(h.time ?: "", color = TextSecondary, fontSize = 12.sp)
                             Text(weatherEmojiFromText(h.weather), fontSize = 22.sp)
-                            Text((h.temperature ?: "--") + "°", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                            Text((h.temperature?.value ?: "--") + "°", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium)
                         }
                     }
                 }
@@ -185,7 +185,7 @@ private fun XiaomiSuccessContent(
                         Text(d.date ?: "", color = TextSecondary, modifier = Modifier.weight(1f))
                         Text(weatherEmojiFromText(d.weather), fontSize = 18.sp)
                         Spacer(Modifier.width(8.dp))
-                        Text((d.tempMin ?: "--") + "°~" + (d.tempMax ?: "--") + "°", color = Color.White)
+                        Text((d.tempMin?.value ?: "--") + "°~" + (d.tempMax?.value ?: "--") + "°", color = Color.White)
                     }
                     Spacer(Modifier.height(6.dp))
                 }
