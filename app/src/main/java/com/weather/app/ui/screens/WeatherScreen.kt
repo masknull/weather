@@ -107,7 +107,7 @@ fun WeatherScreen(viewModel: WeatherViewModel, onSearchClick: () -> Unit) {
                 when (state) {
                     is WeatherUiState.Idle -> IdleContent(viewModel)
                     is WeatherUiState.Loading -> LoadingContent()
-                    is WeatherUiState.SuccessXiaomi -> XiaomiSuccessContent(state, viewModel, onSearchClick, savedCities)
+                    is WeatherUiState.SuccessXiaomi -> XiaomiSuccessContent(state, viewModel, onSearchClick, savedCities, pagerState.currentPage, pagerState.currentPageOffsetFraction)
                     is WeatherUiState.Success -> LegacySuccessContent(state, viewModel, onSearchClick, savedCities)
                     is WeatherUiState.Error -> ErrorContent(state.message) { viewModel.retry() }
                 }
@@ -183,7 +183,9 @@ private fun XiaomiSuccessContent(
     state: WeatherUiState.SuccessXiaomi,
     viewModel: WeatherViewModel,
     onSearchClick: () -> Unit,
-    savedCities: List<com.weather.app.data.model.SavedCity> = emptyList()
+    savedCities: List<com.weather.app.data.model.SavedCity> = emptyList(),
+    currentPage: Int = 0,
+    pageOffset: Float = 0f
 ) {
     val scrollState = rememberScrollState()
 
@@ -207,8 +209,7 @@ private fun XiaomiSuccessContent(
 
         // 城市名头部：当前城市居中大，左右最多各1个收藏城市，小且透明
         val allCityNames = listOf("我的位置") + savedCities.map { it.name }
-        val curPage = pagerState.currentPage
-        val pageOffset = pagerState.currentPageOffsetFraction
+        val curPage = currentPage
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
             Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Start) {
                 // 左侧城市（curPage-1）
@@ -282,7 +283,7 @@ private fun XiaomiSuccessContent(
         Spacer(Modifier.height(12.dp))
 
         val hTemps = hourlySeriesTemp?.value.orEmpty().map { it.toString() }
-        val hWeathers = hourlySeriesWeather?.value.orEmpty().map { it.toString() }
+        val hWeathers = hourlySeriesWeather?.value.orEmpty().map { it.toInt().toString() }
         // time 字段接口返回为空，从当前整点推算
         val hTimes = hourlySeriesTemp?.time.orEmpty().let { apiTimes ->
             if (apiTimes.isNotEmpty()) apiTimes
@@ -362,8 +363,39 @@ private fun XiaomiSuccessContent(
             GlassCard(Modifier.fillMaxWidth()) {
                 Text("未来${dRanges.size}天", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Medium)
                 Spacer(Modifier.height(8.dp))
+                // 最高温曲线
+                val dHighs = dRanges.map { it.from?.toDoubleOrNull() ?: 0.0 }
+                val dLows = dRanges.map { it.to?.toDoubleOrNull() ?: 0.0 }
+                val allTemps = dHighs + dLows
+                val minT = allTemps.minOrNull() ?: 0.0
+                val maxT = allTemps.maxOrNull() ?: 1.0
+                val tRange = (maxT - minT).coerceAtLeast(1.0)
+                val count = dRanges.size
+                Canvas(
+                    modifier = Modifier.fillMaxWidth().height(48.dp)
+                ) {
+                    val w = size.width
+                    val h = size.height
+                    val step = w / (count - 1).coerceAtLeast(1)
+                    // high curve
+                    val highPts = dHighs.mapIndexed { i, t -> Offset(i * step, h - ((t - minT) / tRange * (h - 12f) + 6f).toFloat()) }
+                    val lowPts = dLows.mapIndexed { i, t -> Offset(i * step, h - ((t - minT) / tRange * (h - 12f) + 6f).toFloat()) }
+                    fun drawCurve(pts: List<Offset>, color: androidx.compose.ui.graphics.Color) {
+                        if (pts.size < 2) return
+                        val path = GPath()
+                        path.moveTo(pts[0].x, pts[0].y)
+                        for (i in 1 until pts.size) {
+                            val cx = (pts[i-1].x + pts[i].x) / 2f
+                            path.cubicTo(cx, pts[i-1].y, cx, pts[i].y, pts[i].x, pts[i].y)
+                        }
+                        drawPath(path, color, style = Stroke(width = 2.dp.toPx()))
+                    }
+                    drawCurve(highPts, androidx.compose.ui.graphics.Color(0xFFFFD54F))
+                    drawCurve(lowPts, androidx.compose.ui.graphics.Color(0xFF90CAF9))
+                }
+                Spacer(Modifier.height(4.dp))
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    items(dRanges.size) { i ->
+                    items(count) { i ->
                         val r = dRanges.getOrNull(i)
                         val wRange = dWeathers.getOrNull(i)
                         val dayLabel = when (i) {
@@ -373,17 +405,16 @@ private fun XiaomiSuccessContent(
                             else -> {
                                 val cal = java.util.Calendar.getInstance()
                                 cal.add(java.util.Calendar.DAY_OF_YEAR, i)
-                                val dow = arrayOf("日","一","二","三","四","五","六")[cal.get(java.util.Calendar.DAY_OF_WEEK) - 1]
                                 val day = cal.get(java.util.Calendar.DAY_OF_MONTH)
                                 "${day}号"
                             }
                         }
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             Text(dayLabel, color = TextSecondary, fontSize = 11.sp)
-                            Spacer(Modifier.height(4.dp))
-                            if (wRange != null) Text(xiaomiWeatherDesc(wRange.from ?: "0"), color = TextSecondary, fontSize = 10.sp)
-                            Text("${r?.to ?: "--"}°", color = Color.White, fontSize = 14.sp)
-                            Text("~${r?.from ?: "--"}°", color = TextSecondary, fontSize = 11.sp)
+                            Text(weatherEmojiFromText(xiaomiWeatherDesc(wRange?.from)), fontSize = 18.sp)
+                            Text("${r?.from ?: "--"}°", color = Color(0xFFFFD54F), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                            Text("${r?.to ?: "--"}°", color = Color(0xFF90CAF9), fontSize = 11.sp)
+                            Text(xiaomiWeatherDesc(wRange?.to), color = TextSecondary, fontSize = 9.sp)
                         }
                     }
                 }
