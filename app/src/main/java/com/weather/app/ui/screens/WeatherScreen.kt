@@ -84,6 +84,7 @@ fun WeatherScreen(viewModel: WeatherViewModel, onSearchClick: () -> Unit) {
 
     HorizontalPager(
         state = pagerState,
+        key = { page -> if (page == 0) "current" else savedCities.getOrNull(page - 1)?.id ?: page },
         modifier = Modifier.fillMaxSize().nestedScroll(object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset = Offset.Zero
         }),
@@ -94,7 +95,7 @@ fun WeatherScreen(viewModel: WeatherViewModel, onSearchClick: () -> Unit) {
             snapPositionalThreshold = 0.1f,
             snapVelocityThreshold = 100.dp
         )
-    ) { _ ->
+    ) { page ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -105,13 +106,16 @@ fun WeatherScreen(viewModel: WeatherViewModel, onSearchClick: () -> Unit) {
                 transitionSpec = {
                     fadeIn(tween(300)) togetherWith fadeOut(tween(200))
                 },
-                contentKey = { s -> if (s is WeatherUiState.SuccessXiaomi) "${s.cityName}:${s.weather.current?.pubTime}" else s::class },
+                contentKey = { s ->
+                    val pageKey = if (page == 0) "current" else savedCities.getOrNull(page - 1)?.id?.toString() ?: page.toString()
+                    if (s is WeatherUiState.SuccessXiaomi) "$pageKey:${s.cityName}:${s.weather.current?.pubTime}" else "$pageKey:${s::class}"
+                },
                 label = "weather_content"
             ) { state ->
                 when (state) {
                     is WeatherUiState.Idle -> IdleContent(viewModel)
                     is WeatherUiState.Loading -> LoadingContent()
-                    is WeatherUiState.SuccessXiaomi -> XiaomiSuccessContent(state, viewModel, onSearchClick, savedCities, pagerState.currentPage, pagerState.currentPageOffsetFraction)
+                    is WeatherUiState.SuccessXiaomi -> XiaomiSuccessContent(state, viewModel, onSearchClick, savedCities, pagerState.settledPage, pagerState.currentPageOffsetFraction)
                     is WeatherUiState.Success -> LegacySuccessContent(state, viewModel, onSearchClick, savedCities)
                     is WeatherUiState.Error -> ErrorContent(state.message) { viewModel.retry() }
                 }
@@ -212,25 +216,34 @@ private fun XiaomiSuccessContent(
         Spacer(Modifier.height(16.dp))
 
         // 城市名头部：左城市名区域（左/中/右）+ 右侧按钮
-        val allCityNames = listOf("我的位置") + savedCities.map { it.name }
+        val savedNames = savedCities.map { it.name.split(",").first().split("，").first() }
         val curPage = currentPage
+        val centerName = state.cityName.split(" ").first().split(",").first().split("，").first()
+        val leftName = when {
+            curPage <= 0 -> null
+            curPage == 1 -> null
+            else -> savedNames.getOrNull(curPage - 2)
+        }
+        val rightName = when {
+            curPage < 0 -> savedNames.firstOrNull()
+            curPage == 0 -> savedNames.firstOrNull()
+            else -> savedNames.getOrNull(curPage)
+        }
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
             // 城市名区域（占满剩余空间）
             Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
-                val leftName = if (curPage > 0) allCityNames.getOrNull(curPage - 1)?.split(",")?.first()?.split("，")?.first() else null
                 Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
                     if (leftName != null) Text(text = leftName, color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                 }
                 Text(
-                    text = state.cityName.split(" ").first().split(",").first().split("，").first(),
+                    text = centerName,
                     color = Color.White,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1
                 )
-                val rightName = allCityNames.getOrNull(curPage + 1)?.split(",")?.first()?.split("，")?.first()
                 Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
-                    if (rightName != null) Text(text = rightName, color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                    if (rightName != null && rightName != centerName) Text(text = rightName, color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                 }
             }
             // 按钮区域（固定右侧）
@@ -333,52 +346,76 @@ private fun XiaomiSuccessContent(
                 ) {
                     Column(modifier = Modifier.width(totalWDp.dp)) {
                         // 温度曲线
-                        if (curveTemps.size >= 2) {
-                            val minT = curveTemps.min()
-                            val maxT = curveTemps.max()
-                            val tRange = (maxT - minT).coerceAtLeast(1.0)
-                            Canvas(modifier = Modifier.fillMaxWidth().height(52.dp)) {
-                                val itemPx = size.width / hCount
-                                val h = size.height
-                                val pts = curveTemps.mapIndexed { i, t ->
-                                    Offset(
-                                        x = i * itemPx + itemPx / 2f,
-                                        y = h - ((t - minT) / tRange * (h - 16f) + 8f).toFloat()
-                                    )
+                        val minT = curveTemps.minOrNull() ?: 0.0
+                        val maxT = curveTemps.maxOrNull() ?: 0.0
+                        val tRange = (maxT - minT).coerceAtLeast(1.0)
+                        androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxWidth().height(74.dp)) {
+                            if (curveTemps.size >= 2) {
+                                Canvas(modifier = Modifier.fillMaxWidth().height(52.dp).align(Alignment.BottomStart)) {
+                                    val itemPx = size.width / hCount
+                                    val h = size.height
+                                    val pts = curveTemps.mapIndexed { i, t ->
+                                        Offset(
+                                            x = i * itemPx + itemPx / 2f,
+                                            y = h - ((t - minT) / tRange * (h - 16f) + 8f).toFloat()
+                                        )
+                                    }
+                                    fun tempColor(t: Double): androidx.compose.ui.graphics.Color {
+                                        val stops = listOf(
+                                            -10.0 to androidx.compose.ui.graphics.Color(0xFF5C6BC0),
+                                            0.0 to androidx.compose.ui.graphics.Color(0xFF42A5F5),
+                                            10.0 to androidx.compose.ui.graphics.Color(0xFF26C6DA),
+                                            20.0 to androidx.compose.ui.graphics.Color(0xFF66BB6A),
+                                            25.0 to androidx.compose.ui.graphics.Color(0xFFFFCA28),
+                                            30.0 to androidx.compose.ui.graphics.Color(0xFFFFA726),
+                                            40.0 to androidx.compose.ui.graphics.Color(0xFFEF5350)
+                                        )
+                                        val lo = stops.lastOrNull { it.first <= t } ?: stops.first()
+                                        val hi = stops.firstOrNull { it.first > t } ?: stops.last()
+                                        if (lo == hi) return lo.second
+                                        val f = ((t - lo.first) / (hi.first - lo.first)).toFloat().coerceIn(0f, 1f)
+                                        return androidx.compose.ui.graphics.Color(
+                                            red = lerp(lo.second.red, hi.second.red, f),
+                                            green = lerp(lo.second.green, hi.second.green, f),
+                                            blue = lerp(lo.second.blue, hi.second.blue, f),
+                                            alpha = 1f
+                                        )
+                                    }
+                                    for (i in 1 until pts.size) {
+                                        val segPath = GPath()
+                                        segPath.moveTo(pts[i-1].x, pts[i-1].y)
+                                        val cx = (pts[i-1].x + pts[i].x) / 2f
+                                        segPath.cubicTo(cx, pts[i-1].y, cx, pts[i].y, pts[i].x, pts[i].y)
+                                        val avgT = (curveTemps[i-1] + curveTemps[i]) / 2.0
+                                        drawPath(segPath, color = tempColor(avgT), style = Stroke(width = 3f, cap = androidx.compose.ui.graphics.StrokeCap.Round))
+                                    }
+                                    pts.forEachIndexed { i, pt -> drawCircle(color = tempColor(curveTemps[i]), radius = 4f, center = pt) }
                                 }
-                                // 气象标准温度渐变色（线性插值）
-                                fun tempColor(t: Double): androidx.compose.ui.graphics.Color {
-                                    val stops = listOf(
-                                        -10.0 to androidx.compose.ui.graphics.Color(0xFF5C6BC0),
-                                        0.0 to androidx.compose.ui.graphics.Color(0xFF42A5F5),
-                                        10.0 to androidx.compose.ui.graphics.Color(0xFF26C6DA),
-                                        20.0 to androidx.compose.ui.graphics.Color(0xFF66BB6A),
-                                        25.0 to androidx.compose.ui.graphics.Color(0xFFFFCA28),
-                                        30.0 to androidx.compose.ui.graphics.Color(0xFFFFA726),
-                                        40.0 to androidx.compose.ui.graphics.Color(0xFFEF5350)
-                                    )
-                                    val lo = stops.lastOrNull { it.first <= t } ?: stops.first()
-                                    val hi = stops.firstOrNull { it.first > t } ?: stops.last()
-                                    if (lo == hi) return lo.second
-                                    val f = ((t - lo.first) / (hi.first - lo.first)).toFloat().coerceIn(0f, 1f)
-                                    return androidx.compose.ui.graphics.Color(
-                                        red = lerp(lo.second.red, hi.second.red, f),
-                                        green = lerp(lo.second.green, hi.second.green, f),
-                                        blue = lerp(lo.second.blue, hi.second.blue, f),
-                                        alpha = 1f
-                                    )
+                            }
+                            Row(modifier = Modifier.fillMaxWidth().align(Alignment.BottomStart)) {
+                                for (idx in 0 until hCount) {
+                                    val t = curveTemps.getOrNull(idx)
+                                    if (t != null) {
+                                        val normalized = ((t - minT) / tRange).toFloat().coerceIn(0f, 1f)
+                                        val tempYOffset = ((1f - normalized) * 28f).dp
+                                        Box(modifier = Modifier.width(itemWDp.dp).fillMaxHeight()) {
+                                            Text(
+                                                text = "${t.toInt()}°",
+                                                color = Color.White,
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Medium,
+                                                modifier = Modifier
+                                                    .align(Alignment.TopCenter)
+                                                    .offset(y = tempYOffset)
+                                            )
+                                        }
+                                    } else {
+                                        Spacer(modifier = Modifier.width(itemWDp.dp))
+                                    }
                                 }
-                                for (i in 1 until pts.size) {
-                                    val segPath = GPath()
-                                    segPath.moveTo(pts[i-1].x, pts[i-1].y)
-                                    val cx = (pts[i-1].x + pts[i].x) / 2f
-                                    segPath.cubicTo(cx, pts[i-1].y, cx, pts[i].y, pts[i].x, pts[i].y)
-                                    val avgT = (curveTemps[i-1] + curveTemps[i]) / 2.0
-                                    drawPath(segPath, color = tempColor(avgT), style = Stroke(width = 3f, cap = androidx.compose.ui.graphics.StrokeCap.Round))
-                                }
-                                pts.forEachIndexed { i, pt -> drawCircle(color = tempColor(curveTemps[i]), radius = 4f, center = pt) }
                             }
                         }
+                        Spacer(Modifier.height(4.dp))
                         // 时间/天气行
                         Row(modifier = Modifier.fillMaxWidth()) {
                             val hPrecipLocal = hPrecip
@@ -389,8 +426,6 @@ private fun XiaomiSuccessContent(
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     verticalArrangement = Arrangement.spacedBy(2.dp)
                                 ) {
-                                    val t = curveTemps.getOrNull(idx)
-                                    if (t != null) Text("${t.toInt()}°", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Medium)
                                     Text(hTimes.getOrNull(idx) ?: "", color = Color.White.copy(alpha = 0.9f), fontSize = 10.sp)
                                     Text(weatherEmojiFromText(xiaomiWeatherDesc(hWeathers.getOrNull(idx))), fontSize = 20.sp)
                                     if (precipPct > 0) Text("${precipPct}%", color = Color(0xFF90CAF9), fontSize = 10.sp)
