@@ -17,6 +17,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
@@ -64,8 +68,9 @@ fun WeatherScreen(viewModel: WeatherViewModel, onSearchClick: () -> Unit) {
     }
 
     // when user swipes to saved city page, load it
-    LaunchedEffect(pagerState.currentPage) {
-        val page = pagerState.currentPage
+    // 只在滑动完全停止后（settledPage）才触发数据请求，避免滑动中转圈
+    LaunchedEffect(pagerState.settledPage) {
+        val page = pagerState.settledPage
         if (page > 0) {
             val city = savedCities.getOrNull(page - 1)
             if (city != null) viewModel.loadCity(city.latitude, city.longitude, city.name)
@@ -76,7 +81,9 @@ fun WeatherScreen(viewModel: WeatherViewModel, onSearchClick: () -> Unit) {
 
     HorizontalPager(
         state = pagerState,
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize().nestedScroll(object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset = Offset.Zero
+        }),
         pageSpacing = 0.dp,
         flingBehavior = PagerDefaults.flingBehavior(
             state = pagerState,
@@ -194,7 +201,7 @@ private fun XiaomiSuccessContent(
             .verticalScroll(scrollState)
             .statusBarsPadding()
             .navigationBarsPadding()
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = 16.dp),
     ) {
         Spacer(Modifier.height(16.dp))
 
