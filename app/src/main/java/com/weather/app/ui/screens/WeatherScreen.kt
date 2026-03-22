@@ -308,48 +308,70 @@ private fun XiaomiSuccessContent(
                 Text("24小时预报" + if (rainHint.isNotBlank()) "  ☔ $rainHint" else "", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Medium)
                 Spacer(Modifier.height(8.dp))
                 val curveTemps = hourlySeriesTemp?.value.orEmpty().take(24)
-                if (curveTemps.size >= 2) {
-                    val minT = curveTemps.min()
-                    val maxT = curveTemps.max()
-                    val tRange = (maxT - minT).coerceAtLeast(1.0)
-                    val itemW = 60.dp
-                    val curveH = 48.dp
-                    Canvas(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(curveH)
-                    ) {
-                        val w = size.width
-                        val h = size.height
-                        val step = w / (curveTemps.size - 1)
-                        val pts = curveTemps.mapIndexed { i, t ->
-                            Offset(
-                                x = i * step,
-                                y = h - ((t - minT) / tRange * (h - 12f) + 6f).toFloat()
-                            )
+                val hCount = minOf(24, hTimes.size, hTemps.size)
+                val itemWDp = 60
+                val totalWDp = itemWDp * hCount
+                // 曲线 + 文字共享同一个水平滚动区域，精确对齐
+                androidx.compose.foundation.layout.Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                ) {
+                    Column(modifier = Modifier.width(totalWDp.dp)) {
+                        // 温度曲线
+                        if (curveTemps.size >= 2) {
+                            val minT = curveTemps.min()
+                            val maxT = curveTemps.max()
+                            val tRange = (maxT - minT).coerceAtLeast(1.0)
+                            Canvas(modifier = Modifier.fillMaxWidth().height(52.dp)) {
+                                val itemPx = size.width / hCount
+                                val h = size.height
+                                val pts = curveTemps.mapIndexed { i, t ->
+                                    Offset(
+                                        x = i * itemPx + itemPx / 2f,
+                                        y = h - ((t - minT) / tRange * (h - 16f) + 8f).toFloat()
+                                    )
+                                }
+                                val path = GPath()
+                                path.moveTo(pts[0].x, pts[0].y)
+                                for (i in 1 until pts.size) {
+                                    val cx = (pts[i-1].x + pts[i].x) / 2f
+                                    path.cubicTo(cx, pts[i-1].y, cx, pts[i].y, pts[i].x, pts[i].y)
+                                }
+                                drawPath(path, color = androidx.compose.ui.graphics.Color(0xFF90CAF9), style = Stroke(width = 3f, cap = androidx.compose.ui.graphics.StrokeCap.Round))
+                                pts.forEach { pt -> drawCircle(color = androidx.compose.ui.graphics.Color.White, radius = 4f, center = pt) }
+                                // 温度标注
+                                curveTemps.forEachIndexed { i, t ->
+                                    val pt = pts[i]
+                                    drawContext.canvas.nativeCanvas.drawText(
+                                        "${t.toInt()}°",
+                                        pt.x,
+                                        pt.y - 10f,
+                                        android.graphics.Paint().apply {
+                                            color = android.graphics.Color.WHITE
+                                            textSize = 28f
+                                            textAlign = android.graphics.Paint.Align.CENTER
+                                            isAntiAlias = true
+                                        }
+                                    )
+                                }
+                            }
                         }
-                        val path = GPath()
-                        path.moveTo(pts[0].x, pts[0].y)
-                        for (i in 1 until pts.size) {
-                            val cx = (pts[i-1].x + pts[i].x) / 2f
-                            path.cubicTo(cx, pts[i-1].y, cx, pts[i].y, pts[i].x, pts[i].y)
-                        }
-                        drawPath(path, color = androidx.compose.ui.graphics.Color(0xFF90CAF9), style = Stroke(width = 3f))
-                        pts.forEach { pt ->
-                            drawCircle(color = androidx.compose.ui.graphics.Color.White, radius = 3f, center = pt)
-                        }
-                    }
-                }
-                Spacer(Modifier.height(4.dp))
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                    val count = minOf(24, hTimes.size, hTemps.size)
-                    items(count) { idx ->
-                        val precipPct = hPrecip.getOrNull(idx)?.let { it.toInt() } ?: 0
-                        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(hTimes.getOrNull(idx) ?: "", color = TextSecondary, fontSize = 12.sp)
-                            Text(weatherEmojiFromText(xiaomiWeatherDesc(hWeathers.getOrNull(idx))), fontSize = 22.sp)
-                            Text(((hourlySeriesTemp?.value?.getOrNull(idx) ?: Double.NaN).let { if (it.isNaN()) "--" else it.toInt().toString() }) + "°", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium)
-                            if (precipPct > 0) Text("${precipPct}%", color = Color(0xFF90CAF9), fontSize = 11.sp)
+                        // 时间/天气行
+                        Row(modifier = Modifier.fillMaxWidth()) {
+                            val hPrecipLocal = hPrecip
+                            for (idx in 0 until hCount) {
+                                val precipPct = hPrecipLocal.getOrNull(idx)?.let { it.toInt() } ?: 0
+                                Column(
+                                    modifier = Modifier.width(itemWDp.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                                ) {
+                                    Text(hTimes.getOrNull(idx) ?: "", color = Color.White.copy(alpha=0.9f), fontSize = 11.sp)
+                                    Text(weatherEmojiFromText(xiaomiWeatherDesc(hWeathers.getOrNull(idx))), fontSize = 20.sp)
+                                    if (precipPct > 0) Text("${precipPct}%", color = Color(0xFF90CAF9), fontSize = 10.sp)
+                                }
+                            }
                         }
                     }
                 }
