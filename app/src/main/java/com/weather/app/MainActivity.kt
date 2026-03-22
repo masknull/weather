@@ -2,6 +2,7 @@ package com.weather.app
 
 import android.Manifest
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -81,10 +82,19 @@ class MainActivity : ComponentActivity() {
                 }
 
                 // System back behavior
+                var lastBackPressed by remember { mutableStateOf(0L) }
                 BackHandler(enabled = true) {
                     when (route) {
                         "search" -> route = "weather"
-                        "weather" -> route = "home"
+                        "weather" -> {
+                            val now = System.currentTimeMillis()
+                            if (now - lastBackPressed < 2000) {
+                                finish()
+                            } else {
+                                lastBackPressed = now
+                                Toast.makeText(this@MainActivity, "再按一次退出", Toast.LENGTH_SHORT).show()
+                            }
+                        }
                         else -> finish()
                     }
                 }
