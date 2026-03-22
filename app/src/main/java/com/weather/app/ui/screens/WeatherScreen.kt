@@ -2,6 +2,10 @@ package com.weather.app.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -36,9 +40,33 @@ import com.weather.app.viewmodel.WeatherViewModel
 @Composable
 fun WeatherScreen(viewModel: WeatherViewModel, onSearchClick: () -> Unit) {
     val uiState by viewModel.uiState.collectAsState()
+    val savedCities by viewModel.savedCities.collectAsState()
+    val scope = rememberCoroutineScope()
+
+    // pages: 0 = current location/city, 1..N = saved cities
+    val pageCount = maxOf(1, savedCities.size + 1)
+    val pagerState = rememberPagerState(pageCount = { pageCount })
+
+    // when uiState changes to new city, jump to page 0
+    LaunchedEffect(uiState) {
+        if (pagerState.currentPage != 0) scope.launch { pagerState.animateScrollToPage(0) }
+    }
+
+    // when user swipes to saved city page, load it
+    LaunchedEffect(pagerState.currentPage) {
+        val page = pagerState.currentPage
+        if (page > 0) {
+            val city = savedCities.getOrNull(page - 1)
+            if (city != null) viewModel.loadCity(city.latitude, city.longitude, city.name)
+        }
+    }
 
     val gradient = Brush.verticalGradient(listOf(Color(0xFF1C8DFF), Color(0xFF5BC8FA)))
 
+    HorizontalPager(
+        state = pagerState,
+        modifier = Modifier.fillMaxSize()
+    ) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -114,6 +142,8 @@ fun ErrorContent(message: String, onRetry: () -> Unit) {
             }
         }
     }
+    } // HorizontalPager page
+    } // HorizontalPager
 }
 
 @Composable
@@ -217,8 +247,20 @@ private fun XiaomiSuccessContent(
                     items(dRanges.size) { i ->
                         val r = dRanges.getOrNull(i)
                         val wRange = dWeathers.getOrNull(i)
+                        val dayLabel = when (i) {
+                            0 -> "今天"
+                            1 -> "明天"
+                            2 -> "后天"
+                            else -> {
+                                val cal = java.util.Calendar.getInstance()
+                                cal.add(java.util.Calendar.DAY_OF_YEAR, i)
+                                val dow = arrayOf("日","一","二","三","四","五","六")[cal.get(java.util.Calendar.DAY_OF_WEEK) - 1]
+                                val day = cal.get(java.util.Calendar.DAY_OF_MONTH)
+                                "周$dow ${day}号"
+                            }
+                        }
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("第${i + 1}天", color = TextSecondary, fontSize = 11.sp)
+                            Text(dayLabel, color = TextSecondary, fontSize = 11.sp)
                             Spacer(Modifier.height(4.dp))
                             if (wRange != null) Text(xiaomiWeatherDesc(wRange.from ?: "0"), color = TextSecondary, fontSize = 10.sp)
                             Text("${r?.to ?: "--"}°", color = Color.White, fontSize = 14.sp)

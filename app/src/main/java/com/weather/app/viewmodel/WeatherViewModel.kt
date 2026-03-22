@@ -48,6 +48,10 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
     private val _uiState = MutableStateFlow<WeatherUiState>(WeatherUiState.Idle)
     val uiState: StateFlow<WeatherUiState> = _uiState.asStateFlow()
 
+    // Track current coordinates for saving cities
+    private var currentLat: Double = 0.0
+    private var currentLon: Double = 0.0
+
     private val _searchState = MutableStateFlow<SearchState>(SearchState.Idle)
     val searchState: StateFlow<SearchState> = _searchState.asStateFlow()
 
@@ -142,20 +146,23 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
 
     fun saveCurrentCity() {
         val state = _uiState.value
-        if (state is WeatherUiState.Success) {
-            viewModelScope.launch {
-                // NOTE: placeholder save for now; proper city saving will be wired from Search results
-                repo.saveCity(
-                    SavedCity(
-                        id = state.cityName.hashCode().toLong(),
-                        name = state.cityName,
-                        region = null,
-                        country = null,
-                        latitude = 0.0,
-                        longitude = 0.0
-                    )
+        val (name, lat, lon) = when (state) {
+            is WeatherUiState.SuccessXiaomi -> Triple(state.cityName, currentLat, currentLon)
+            is WeatherUiState.Success -> Triple(state.cityName, currentLat, currentLon)
+            else -> return
+        }
+        if (lat == 0.0 && lon == 0.0) return
+        viewModelScope.launch {
+            repo.saveCity(
+                SavedCity(
+                    id = "$name:$lat:$lon".hashCode().toLong(),
+                    name = name,
+                    region = null,
+                    country = null,
+                    latitude = lat,
+                    longitude = lon
                 )
-            }
+            )
         }
     }
 
@@ -229,6 +236,8 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
             return
         }
         _uiState.value = WeatherUiState.Loading
+        currentLat = lat
+        currentLon = lon
         repo.getXiaomiWeather(lat, lon).fold(
             onSuccess = { _uiState.value = WeatherUiState.SuccessXiaomi(name, it) },
             onFailure = {
