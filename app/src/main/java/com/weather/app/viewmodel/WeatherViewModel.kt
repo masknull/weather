@@ -127,8 +127,39 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
 
     fun onSearchQueryChange(query: String) {
         _searchQuery.value = query
-        if (query.length >= 2) searchCity(query)
+        val q = query.trim()
+        if (q.length >= 2) searchCityVariants(q)
         else _searchState.value = SearchState.Idle
+    }
+
+    private fun searchCityVariants(query: String) {
+        // Try common CN suffix variants to improve county-level hit rate
+        val variants = linkedSetOf(
+            query,
+            query.replace(" ", ""),
+            query.removeSuffix("县"),
+            query.removeSuffix("市"),
+            query.removeSuffix("区"),
+        ).filter { it.length >= 2 }
+
+        viewModelScope.launch {
+            _searchState.value = SearchState.Loading
+            val all = mutableListOf<GeoLocation>()
+            var lastErr: Throwable? = null
+            for (v in variants) {
+                val res = repo.searchCity(v)
+                res.fold(
+                    onSuccess = { all.addAll(it) },
+                    onFailure = { lastErr = it }
+                )
+                if (all.isNotEmpty()) break
+            }
+            if (all.isNotEmpty()) {
+                _searchState.value = SearchState.Results(all.distinctBy { it.id })
+            } else {
+                _searchState.value = SearchState.Error(lastErr?.message ?: "没有搜到结果")
+            }
+        }
     }
 
     fun clearSearch() {

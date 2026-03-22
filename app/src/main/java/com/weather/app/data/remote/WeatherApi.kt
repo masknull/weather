@@ -34,7 +34,7 @@ object WeatherApi {
         client.get("$GEO_BASE/search") {
             parameter("name", query)
             parameter("count", 10)
-            parameter("language", "en")
+            parameter("language", "zh")
             parameter("format", "json")
         }.body()
 
