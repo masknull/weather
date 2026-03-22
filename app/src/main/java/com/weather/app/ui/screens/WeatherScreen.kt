@@ -162,7 +162,7 @@ private fun XiaomiSuccessContent(
 
         val hTimes = hourlySeriesTemp?.time.orEmpty()
         val hTemps = hourlySeriesTemp?.value.orEmpty().map { it.toString() }
-        val hWeathers = hourlySeriesWeather?.value.orEmpty()
+        val hWeathers = hourlySeriesWeather?.value.orEmpty().map { it.toString() }
         if (hTimes.isNotEmpty() && hTemps.isNotEmpty()) {
             GlassCard(Modifier.fillMaxWidth()) {
                 Text("24小时预报", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Medium)
@@ -173,7 +173,7 @@ private fun XiaomiSuccessContent(
                         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(hTimes.getOrNull(idx) ?: "", color = TextSecondary, fontSize = 12.sp)
                             Text(weatherEmojiFromText(hWeathers.getOrNull(idx)), fontSize = 22.sp)
-                            Text((hTemps.getOrNull(idx) ?: "--") + "°", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                            Text(((hourlySeriesTemp?.value?.getOrNull(idx) ?: Double.NaN).let { if (it.isNaN()) "--" else it.toInt().toString() }) + "°", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium)
                         }
                     }
                 }
@@ -192,7 +192,7 @@ private fun XiaomiSuccessContent(
                 for (i in 0 until count) {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Text(dTimes.getOrNull(i) ?: "", color = TextSecondary, modifier = Modifier.weight(1f))
-                        Text((dTemps.getOrNull(i) ?: "--") + "°", color = Color.White)
+                        Text(((dTemps.getOrNull(i) ?: Double.NaN).let { if (it.isNaN()) "--" else it.toInt().toString() }) + "°", color = Color.White)
                     }
                     Spacer(Modifier.height(6.dp))
                 }
