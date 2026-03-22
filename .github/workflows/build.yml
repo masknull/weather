@@ -47,13 +47,10 @@ jobs:
           path: app/build/outputs/apk/release/*arm64*.apk
           if-no-files-found: error
 
-      - name: Create Release
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v${{ github.run_number }}
-          name: "Weather v${{ github.run_number }}"
-          files: app/build/outputs/apk/release/*arm64*.apk
-          generate_release_notes: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload APK to workflow summary
+        if: github.ref == 'refs/heads/main'
+        run: |
+          echo "Build complete. Download the APK from the Artifacts section: weather-arm64-v8a" >> $GITHUB_STEP_SUMMARY
+
+      # Release creation may fail on restricted tokens (403: Resource not accessible by integration).
+      # We keep artifacts upload as the primary delivery path.
