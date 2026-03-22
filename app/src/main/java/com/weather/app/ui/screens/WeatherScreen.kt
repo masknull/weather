@@ -21,6 +21,9 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.util.lerp
+import androidx.compose.ui.draw.alpha
+import kotlin.math.abs
 import androidx.compose.foundation.Canvas
 import androidx.compose.ui.graphics.Path as GPath
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -208,17 +211,50 @@ private fun XiaomiSuccessContent(
     ) {
         Spacer(Modifier.height(16.dp))
 
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = state.cityName.split(" ").first().split(",").first().split("，").first(),
-                color = Color.White,
-                fontSize = 28.sp,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.weight(1f)
-            )
-            IconButton(onClick = { viewModel.saveCurrentCity() }) {
-                val isSaved = savedCities.any { it.name == state.cityName }
-                Icon(if (isSaved) Icons.Default.Bookmark else Icons.Default.BookmarkBorder, contentDescription = "收藏", tint = Color.White)
+        // 城市名头部：当前城市居中大，左右最多各1个收藏城市，小且透明
+        val allCityNames = listOf("我的位置") + savedCities.map { it.name }
+        val curPage = pagerState.currentPage
+        val pageOffset = pagerState.currentPageOffsetFraction
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+            Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Start) {
+                // 左侧城市（curPage-1）
+                val leftName = if (curPage > 0) allCityNames.getOrNull(curPage - 1)?.split(" ")?.first()?.split(",")?.first() else null
+                if (leftName != null) {
+                    val leftAlpha = lerp(0.4f, 0.15f, pageOffset.coerceIn(0f, 1f))
+                    val leftSize = lerp(16f, 13f, pageOffset.coerceIn(0f, 1f))
+                    Text(
+                        text = leftName,
+                        color = Color.White,
+                        fontSize = leftSize.sp,
+                        modifier = Modifier.alpha(leftAlpha).padding(end = 8.dp),
+                        maxLines = 1
+                    )
+                }
+                // 当前城市
+                Text(
+                    text = state.cityName.split(" ").first().split(",").first().split("，").first(),
+                    color = Color.White,
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1
+                )
+                // 右侧城市（curPage+1）
+                val rightName = allCityNames.getOrNull(curPage + 1)?.split(" ")?.first()?.split(",")?.first()
+                if (rightName != null) {
+                    val rightAlpha = lerp(0.4f, 0.6f, pageOffset.coerceIn(0f, 1f))
+                    val rightSize = lerp(13f, 16f, pageOffset.coerceIn(0f, 1f))
+                    Text(
+                        text = rightName,
+                        color = Color.White,
+                        fontSize = rightSize.sp,
+                        modifier = Modifier.alpha(rightAlpha).padding(start = 8.dp),
+                        maxLines = 1
+                    )
+                }
+            }
+            val isSaved = savedCities.any { it.name == state.cityName }
+            IconButton(onClick = { if (isSaved) viewModel.removeSavedCity(state.cityName.hashCode().toLong()) else viewModel.saveCurrentCity() }) {
+                Icon(if (isSaved) Icons.Default.Bookmark else Icons.Default.BookmarkBorder, contentDescription = if (isSaved) "已收藏" else "收藏", tint = Color.White)
             }
             IconButton(onClick = onSearchClick) {
                 Icon(Icons.Default.Search, contentDescription = "搜索", tint = Color.White)
