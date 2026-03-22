@@ -207,44 +207,30 @@ private fun XiaomiSuccessContent(
     ) {
         Spacer(Modifier.height(16.dp))
 
-        // 城市名头部：当前城市居中大，左右最多各1个收藏城市，小且透明
+        // 城市名头部：当前居中，左右各1个收藏城市（小+透明）
         val allCityNames = listOf("我的位置") + savedCities.map { it.name }
         val curPage = currentPage
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-            Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Start) {
-                // 左侧城市（curPage-1）
-                val leftName = if (curPage > 0) allCityNames.getOrNull(curPage - 1)?.split(" ")?.first()?.split(",")?.first() else null
+            // 左侧城市
+            val leftName = if (curPage > 0) allCityNames.getOrNull(curPage - 1)?.split(",")?.first()?.split("，")?.first() else null
+            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
                 if (leftName != null) {
-                    val leftAlpha = lerp(0.4f, 0.15f, pageOffset.coerceIn(0f, 1f))
-                    val leftSize = lerp(16f, 13f, pageOffset.coerceIn(0f, 1f))
-                    Text(
-                        text = leftName,
-                        color = Color.White,
-                        fontSize = leftSize.sp,
-                        modifier = Modifier.alpha(leftAlpha).padding(end = 8.dp),
-                        maxLines = 1
-                    )
+                    Text(text = leftName, color = Color.White.copy(alpha = 0.4f), fontSize = 13.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                 }
-                // 当前城市
-                Text(
-                    text = state.cityName.split(" ").first().split(",").first().split("，").first(),
-                    color = Color.White,
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1
-                )
-                // 右侧城市（curPage+1）
-                val rightName = allCityNames.getOrNull(curPage + 1)?.split(" ")?.first()?.split(",")?.first()
+            }
+            // 当前城市（居中）
+            Text(
+                text = state.cityName.split(" ").first().split(",").first().split("，").first(),
+                color = Color.White,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1
+            )
+            // 右侧城市
+            val rightName = allCityNames.getOrNull(curPage + 1)?.split(",")?.first()?.split("，")?.first()
+            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
                 if (rightName != null) {
-                    val rightAlpha = lerp(0.4f, 0.6f, pageOffset.coerceIn(0f, 1f))
-                    val rightSize = lerp(13f, 16f, pageOffset.coerceIn(0f, 1f))
-                    Text(
-                        text = rightName,
-                        color = Color.White,
-                        fontSize = rightSize.sp,
-                        modifier = Modifier.alpha(rightAlpha).padding(start = 8.dp),
-                        maxLines = 1
-                    )
+                    Text(text = rightName, color = Color.White.copy(alpha = 0.4f), fontSize = 13.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                 }
             }
             val isSaved = savedCities.any { it.name == state.cityName }
