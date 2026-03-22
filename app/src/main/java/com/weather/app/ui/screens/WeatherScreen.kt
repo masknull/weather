@@ -281,17 +281,27 @@ private fun XiaomiSuccessContent(
 
         Spacer(Modifier.height(12.dp))
 
-        val hTimes = hourlySeriesTemp?.time.orEmpty()
         val hTemps = hourlySeriesTemp?.value.orEmpty().map { it.toString() }
         val hWeathers = hourlySeriesWeather?.value.orEmpty().map { it.toString() }
-        if (hTimes.isNotEmpty() && hTemps.isNotEmpty()) {
+        // time 字段接口返回为空，从当前整点推算
+        val hTimes = hourlySeriesTemp?.time.orEmpty().let { apiTimes ->
+            if (apiTimes.isNotEmpty()) apiTimes
+            else {
+                val cal = java.util.Calendar.getInstance()
+                cal.set(java.util.Calendar.MINUTE, 0)
+                cal.set(java.util.Calendar.SECOND, 0)
+                (0 until hTemps.size).map {
+                    cal.add(java.util.Calendar.HOUR_OF_DAY, if (it == 0) 0 else 1)
+                    String.format("%02d:00", cal.get(java.util.Calendar.HOUR_OF_DAY))
+                }
+            }
+        }
+        if (hTemps.isNotEmpty()) {
             GlassCard(Modifier.fillMaxWidth()) {
                 val hPrecip = state.weather.forecastHourly?.precipitationProbability?.value.orEmpty()
-                val hPrecipTimes = hourlySeriesTemp?.time.orEmpty()
                 val firstRainIdx = hPrecip.indexOfFirst { it.toInt() > 0 }
                 val rainHint = if (firstRainIdx >= 0) {
-                    val t = hPrecipTimes.getOrNull(firstRainIdx) ?: ""
-                    val hh = t.substringAfter("T").take(5).ifBlank { t.take(5) }
+                    val hh = hTimes.getOrNull(firstRainIdx) ?: ""
                     "预计 $hh 有雨"
                 } else ""
                 Text("24小时预报" + if (rainHint.isNotBlank()) "  ☔ $rainHint" else "", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Medium)
