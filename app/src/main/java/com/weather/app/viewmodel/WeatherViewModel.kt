@@ -38,6 +38,9 @@ sealed interface SearchState {
 
 class WeatherViewModel(application: Application) : AndroidViewModel(application) {
 
+    private fun cityKey(lat: Double, lon: Double, name: String): String =
+        "${String.format("%.4f", lat)},${String.format("%.4f", lon)},$name"
+
     private val repo = WeatherRepository(application)
     private val fusedLocation = LocationServices.getFusedLocationProviderClient(application)
     private var permissionLauncher: ((Array<String>) -> Unit)? = null
@@ -47,6 +50,9 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
 
     private val _uiState = MutableStateFlow<WeatherUiState>(WeatherUiState.Idle)
     val uiState: StateFlow<WeatherUiState> = _uiState.asStateFlow()
+
+    private val _cityStates = MutableStateFlow<Map<String, WeatherUiState>>(emptyMap())
+    val cityStates: StateFlow<Map<String, WeatherUiState>> = _cityStates.asStateFlow()
 
     // Track current coordinates for saving cities
     private var currentLat: Double = 0.0
@@ -134,6 +140,10 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
             loadWeather(lat, lon, name)
             repo.saveLastLocation(lat, lon, name)
         }
+    }
+
+    fun getCityState(lat: Double, lon: Double, name: String): WeatherUiState? {
+        return cityStates.value[cityKey(lat, lon, name)]
     }
 
     fun restoreCurrentCity() {
@@ -253,19 +263,29 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private suspend fun loadWeather(lat: Double, lon: Double, name: String) {
+        val key = cityKey(lat, lon, name)
         if (!isValidLatLon(lat, lon)) {
-            _uiState.value = WeatherUiState.Error("坐标无效（$lat,$lon），请重新定位或手动选择城市")
+            val error = WeatherUiState.Error("坐标无效（$lat,$lon），请重新定位或手动选择城市")
+            _uiState.value = error
+            _cityStates.update { it + (key to error) }
             return
         }
         _uiState.value = WeatherUiState.Loading
+        _cityStates.update { it + (key to WeatherUiState.Loading) }
         currentLat = lat
         currentLon = lon
         repo.getXiaomiWeather(lat, lon).fold(
-            onSuccess = { _uiState.value = WeatherUiState.SuccessXiaomi(name, it) },
+            onSuccess = {
+                val success = WeatherUiState.SuccessXiaomi(name, it)
+                _uiState.value = success
+                _cityStates.update { map -> map + (key to success) }
+            },
             onFailure = {
                 val raw = com.weather.app.data.remote.XiaomiWeatherApi.lastRaw
                 val extra = if (!raw.isNullOrBlank()) "\n\n原始响应(截断)：\n$raw" else ""
-                _uiState.value = WeatherUiState.Error((it.message ?: "网络请求失败") + extra)
+                val error = WeatherUiState.Error((it.message ?: "网络请求失败") + extra)
+                _uiState.value = error
+                _cityStates.update { map -> map + (key to error) }
             }
         )
     }

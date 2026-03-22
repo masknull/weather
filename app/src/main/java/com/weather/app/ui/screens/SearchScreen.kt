@@ -52,28 +52,42 @@ fun SearchScreen(viewModel: WeatherViewModel, onBack: () -> Unit) {
                 IconButton(onClick = onBack) {
                     Icon(Icons.Default.ArrowBack, contentDescription = "返回", tint = Color.White)
                 }
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { viewModel.onSearchQueryChange(it) },
-                    placeholder = { Text("搜索城市…", color = TextSecondary) },
-                    singleLine = true,
-                    modifier = Modifier.weight(1f).focusRequester(focusRequester),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        focusedBorderColor = SkyBlue,
-                        unfocusedBorderColor = Color.White.copy(alpha = 0.3f),
-                        cursorColor = Color.White
-                    ),
-                    shape = RoundedCornerShape(12.dp),
-                    trailingIcon = {
-                        if (searchQuery.isNotEmpty()) {
-                            IconButton(onClick = { viewModel.onSearchQueryChange("") }) {
-                                Icon(Icons.Default.Clear, contentDescription = null, tint = TextSecondary)
+                Row(
+                    modifier = Modifier
+                        .weight(1f)
+                        .background(CardWhite, RoundedCornerShape(12.dp))
+                        .padding(horizontal = 12.dp, vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.Search, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { viewModel.onSearchQueryChange(it) },
+                        placeholder = { Text("搜索城市…", color = TextSecondary) },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f).focusRequester(focusRequester),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            focusedBorderColor = Color.Transparent,
+                            unfocusedBorderColor = Color.Transparent,
+                            disabledBorderColor = Color.Transparent,
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent,
+                            disabledContainerColor = Color.Transparent,
+                            cursorColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        trailingIcon = {
+                            if (searchQuery.isNotEmpty()) {
+                                IconButton(onClick = { viewModel.onSearchQueryChange("") }) {
+                                    Icon(Icons.Default.Clear, contentDescription = null, tint = TextSecondary)
+                                }
                             }
                         }
-                    }
-                )
+                    )
+                }
             }
 
             Spacer(Modifier.height(12.dp))
@@ -82,6 +96,7 @@ fun SearchScreen(viewModel: WeatherViewModel, onBack: () -> Unit) {
             ElevatedCard(
                 onClick = { viewModel.fetchCurrentLocation() },
                 shape = RoundedCornerShape(12.dp),
+                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp),
                 colors = CardDefaults.elevatedCardColors(containerColor = CardWhite),
                 modifier = Modifier.fillMaxWidth()
             ) {

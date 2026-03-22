@@ -69,6 +69,7 @@ private data class PagerCity(
 @Composable
 fun WeatherScreen(viewModel: WeatherViewModel, onSearchClick: () -> Unit) {
     val uiState by viewModel.uiState.collectAsState()
+    val cityStates by viewModel.cityStates.collectAsState()
     val savedCities by viewModel.savedCities.collectAsState()
     val lastLocation by viewModel.lastLocation.collectAsState()
     val scope = rememberCoroutineScope()
@@ -116,6 +117,9 @@ fun WeatherScreen(viewModel: WeatherViewModel, onSearchClick: () -> Unit) {
 
     val gradient = Brush.verticalGradient(listOf(Color(0xFF1C8DFF), Color(0xFF5BC8FA)))
 
+    val currentPagerCity = pagerCities.getOrNull(pagerState.settledPage)
+    val pageState = currentPagerCity?.let { cityStates["${String.format("%.4f", it.latitude)},${String.format("%.4f", it.longitude)},${it.name}"] } ?: uiState
+
     HorizontalPager(
         state = pagerState,
         key = { page -> pagerCities.getOrNull(page)?.id ?: page },
@@ -136,7 +140,7 @@ fun WeatherScreen(viewModel: WeatherViewModel, onSearchClick: () -> Unit) {
                 .background(gradient)
         ) {
             AnimatedContent(
-                targetState = uiState,
+                targetState = pageState,
                 transitionSpec = {
                     fadeIn(tween(300)) togetherWith fadeOut(tween(200))
                 },
@@ -424,7 +428,7 @@ private fun XiaomiSuccessContent(
                                             Text(
                                                 text = "${t.toInt()}°",
                                                 color = Color.White,
-                                                fontSize = 11.sp,
+                                                fontSize = 10.sp,
                                                 fontWeight = FontWeight.Medium,
                                                 modifier = Modifier
                                                     .align(Alignment.TopCenter)
@@ -486,9 +490,28 @@ private fun XiaomiSuccessContent(
                             Text(weatherEmojiFromText(xiaomiWeatherDesc(wRange?.from)), fontSize = 18.sp)
                             Text(xiaomiWeatherDesc(wRange?.from), color = Color.White, fontSize = 10.sp, maxLines = 1)
                             Text("${r?.from ?: "--"}°", color = Color(0xFFFFD54F), fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                            Text("${r?.to ?: "--"}°", color = Color(0xFF90CAF9), fontSize = 11.sp)
+                            Text("${r?.to ?: "--"}°", color = Color(0xFFCDEBFF), fontSize = 11.sp)
                             Text(xiaomiWeatherDesc(wRange?.to), color = TextSecondary, fontSize = 10.sp, maxLines = 1)
                             Text(weatherEmojiFromText(xiaomiWeatherDesc(wRange?.to)), fontSize = 18.sp)
+                        }
+                    }
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+        }
+
+        val nonEmptyIndices = indices.filter { !it.value.isNullOrBlank() && it.value != "0" }
+        if (nonEmptyIndices.isNotEmpty()) {
+            GlassCard(Modifier.fillMaxWidth()) {
+                Text("生活指数", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                Spacer(Modifier.height(8.dp))
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    items(nonEmptyIndices.size) { idx ->
+                        val item = nonEmptyIndices[idx]
+                        val label = indexTypeLabel(item.type ?: "")
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(64.dp)) {
+                            Text(label, color = TextSecondary, fontSize = 10.sp)
+                            Text(item.value ?: "--", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
                         }
                     }
                 }
@@ -528,25 +551,6 @@ private fun XiaomiSuccessContent(
                     Text(a.title ?: "", color = Color.White, fontWeight = FontWeight.SemiBold)
                     if (!a.detail.isNullOrBlank()) Text(a.detail!!, color = TextSecondary)
                     Spacer(Modifier.height(10.dp))
-                }
-            }
-            Spacer(Modifier.height(12.dp))
-        }
-
-        val nonEmptyIndices = indices.filter { !it.value.isNullOrBlank() && it.value != "0" }
-        if (nonEmptyIndices.isNotEmpty()) {
-            GlassCard(Modifier.fillMaxWidth()) {
-                Text("生活指数", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Medium)
-                Spacer(Modifier.height(8.dp))
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(nonEmptyIndices.size) { idx ->
-                        val item = nonEmptyIndices[idx]
-                        val label = indexTypeLabel(item.type ?: "")
-                        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(64.dp)) {
-                            Text(label, color = TextSecondary, fontSize = 10.sp)
-                            Text(item.value ?: "--", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-                        }
-                    }
                 }
             }
             Spacer(Modifier.height(12.dp))
