@@ -9,6 +9,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.weather.app.data.model.*
 import com.weather.app.data.remote.WeatherApi
 import com.weather.app.data.remote.XiaomiWeatherApi
+import com.weather.app.data.remote.XiaomiLocationApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.encodeToString
@@ -30,7 +31,20 @@ class WeatherRepository(private val context: Context) {
     // ── Network ───────────────────────────────────────────────────────────
 
     suspend fun searchCity(query: String): Result<List<GeoLocation>> = runCatching {
-        WeatherApi.searchCity(query).results ?: emptyList()
+        // Use Xiaomi location search to keep the whole stack consistent with Xiaomi weather API
+        val items = com.weather.app.data.remote.XiaomiLocationApi.searchCity(query)
+        items
+            .filter { (it.latitude?.toDoubleOrNull() ?: 0.0) != 0.0 && (it.longitude?.toDoubleOrNull() ?: 0.0) != 0.0 }
+            .map {
+                GeoLocation(
+                    id = (it.locationKey ?: it.key ?: it.name ?: query).hashCode().toLong(),
+                    name = it.name ?: query,
+                    latitude = it.latitude?.toDoubleOrNull() ?: 0.0,
+                    longitude = it.longitude?.toDoubleOrNull() ?: 0.0,
+                    country = it.affiliation,
+                    admin1 = null
+                )
+            }
     }
 
     suspend fun getXiaomiWeather(lat: Double, lon: Double): Result<XiaomiWeatherResponse> = runCatching {
