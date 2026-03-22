@@ -411,10 +411,16 @@ private fun XiaomiSuccessContent(
                         }
                         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             Text(dayLabel, color = TextSecondary, fontSize = 11.sp)
-                            Text(weatherEmojiFromText(xiaomiWeatherDesc(wRange?.from)), fontSize = 18.sp)
-                            Text("${r?.from ?: "--"}°", color = Color(0xFFFFD54F), fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                            Text("${r?.to ?: "--"}°", color = Color(0xFF90CAF9), fontSize = 11.sp)
-                            Text(xiaomiWeatherDesc(wRange?.to), color = TextSecondary, fontSize = 9.sp)
+                            // 白天/夜间天气 emoji 并排
+                            Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text(weatherEmojiFromText(xiaomiWeatherDesc(wRange?.from)), fontSize = 16.sp)
+                                Text(weatherEmojiFromText(xiaomiWeatherDesc(wRange?.to)), fontSize = 16.sp)
+                            }
+                            // 最高/最低温并排
+                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text("${r?.from ?: "--"}°", color = Color(0xFFFFD54F), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                                Text("${r?.to ?: "--"}°", color = Color(0xFF90CAF9), fontSize = 11.sp)
+                            }
                         }
                     }
                 }
