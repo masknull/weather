@@ -332,15 +332,15 @@ private fun XiaomiSuccessContent(
                                         y = h - ((t - minT) / tRange * (h - 16f) + 8f).toFloat()
                                     )
                                 }
-                                // 按温度渐变颜色：低温蓝→高温橙红
-                                fun tempColor(t: Double): androidx.compose.ui.graphics.Color {
-                                    val ratio = ((t - minT) / tRange).toFloat().coerceIn(0f, 1f)
-                                    return androidx.compose.ui.graphics.Color(
-                                        red = lerp(0x90/255f, 0xFF/255f, ratio),
-                                        green = lerp(0xCA/255f, 0x70/255f, ratio),
-                                        blue = lerp(0xF9/255f, 0x43/255f, ratio),
-                                        alpha = 1f
-                                    )
+                                // 按气象标准温度颜色
+                                fun tempColor(t: Double): androidx.compose.ui.graphics.Color = when {
+                                    t <= 0 -> androidx.compose.ui.graphics.Color(0xFF5C6BC0)
+                                    t <= 10 -> androidx.compose.ui.graphics.Color(0xFF42A5F5)
+                                    t <= 20 -> androidx.compose.ui.graphics.Color(0xFF26C6DA)
+                                    t <= 25 -> androidx.compose.ui.graphics.Color(0xFF66BB6A)
+                                    t <= 30 -> androidx.compose.ui.graphics.Color(0xFFFFCA28)
+                                    t <= 35 -> androidx.compose.ui.graphics.Color(0xFFFFA726)
+                                    else -> androidx.compose.ui.graphics.Color(0xFFEF5350)
                                 }
                                 for (i in 1 until pts.size) {
                                     val segPath = GPath()
