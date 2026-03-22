@@ -433,16 +433,12 @@ private fun XiaomiSuccessContent(
                         }
                         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp), modifier = Modifier.width(56.dp)) {
                             Text(dayLabel, color = TextSecondary, fontSize = 10.sp)
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                                Text(weatherEmojiFromText(xiaomiWeatherDesc(wRange?.from)), fontSize = 13.sp)
-                                Text(xiaomiWeatherDesc(wRange?.from), color = Color.White, fontSize = 10.sp, maxLines = 1)
-                            }
+                            Text(weatherEmojiFromText(xiaomiWeatherDesc(wRange?.from)), fontSize = 18.sp)
+                            Text(xiaomiWeatherDesc(wRange?.from), color = Color.White, fontSize = 10.sp, maxLines = 1)
                             Text("${r?.from ?: "--"}°", color = Color(0xFFFFD54F), fontSize = 13.sp, fontWeight = FontWeight.Medium)
                             Text("${r?.to ?: "--"}°", color = Color(0xFF90CAF9), fontSize = 11.sp)
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                                Text(weatherEmojiFromText(xiaomiWeatherDesc(wRange?.to)), fontSize = 13.sp)
-                                Text(xiaomiWeatherDesc(wRange?.to), color = TextSecondary, fontSize = 10.sp, maxLines = 1)
-                            }
+                            Text(xiaomiWeatherDesc(wRange?.to), color = TextSecondary, fontSize = 10.sp, maxLines = 1)
+                            Text(weatherEmojiFromText(xiaomiWeatherDesc(wRange?.to)), fontSize = 18.sp)
                         }
                     }
                 }
@@ -451,10 +447,23 @@ private fun XiaomiSuccessContent(
         }
 
         if (aqi != null) {
+            val aqiVal = aqi.aqi?.toIntOrNull() ?: -1
+            val (aqiLabel, aqiColor) = when {
+                aqiVal < 0 -> "--" to Color.White
+                aqiVal <= 50 -> "优" to Color(0xFF4CAF50)
+                aqiVal <= 100 -> "良" to Color(0xFF8BC34A)
+                aqiVal <= 150 -> "轻度污染" to Color(0xFFFF9800)
+                aqiVal <= 200 -> "中度污染" to Color(0xFFF44336)
+                aqiVal <= 300 -> "重度污染" to Color(0xFF9C27B0)
+                else -> "严重污染" to Color(0xFF7B1FA2)
+            }
             GlassCard(Modifier.fillMaxWidth()) {
                 Text("空气质量", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Medium)
                 Spacer(Modifier.height(8.dp))
-                Text("AQI：${aqi.aqi ?: "--"}", color = Color.White)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("AQI ${aqi.aqi ?: "--"}", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    Text(aqiLabel, color = aqiColor, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                }
                 if (!aqi.primary.isNullOrBlank()) Text("首要污染物：${aqi.primary}", color = TextSecondary)
                 if (!aqi.suggest.isNullOrBlank()) Text(aqi.suggest!!, color = TextSecondary)
             }
