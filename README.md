@@ -1,17 +1,64 @@
-# Weather
+# Weather / 天气
 
-Android weather app (Kotlin + Jetpack Compose) with an iOS Weather–inspired UI.
+一个基于 **Kotlin + Jetpack Compose** 开发的 Android 天气应用，采用卡片式天气主页与横向城市分页浏览设计，重点优化了中文定位、搜索、收藏与多城市切换体验。
 
-## Features (planned)
-- Current location weather (auto locate)
-- City search + manual selection
-- Hourly + 7-day forecast
-- Favorites
+## 软件介绍
 
-## Tech
-- Kotlin, Jetpack Compose (Material 3)
-- Coroutines/Flow, DataStore
-- Open-Meteo APIs (no key)
+这个应用适合想要“打开就能看天气、搜索就能切城市、收藏后连续浏览”的使用场景：
 
-## CI
-GitHub Actions will build an **arm64-v8a APK** and attach it to GitHub Releases.
+- 自动定位并展示当前位置天气
+- 支持中文城市搜索与推荐城市快速进入
+- 支持多城市收藏、排序与切换
+- 支持 24 小时预报、未来多天预报、空气质量、天气预警、生活指数等信息展示
+
+## 当前主要功能
+
+- **当前位置天气**
+  - 进入应用自动请求定位
+  - 搜索页推荐区首位固定展示“当前位置”卡片
+  - 根据街道 / 区县等信息动态显示更合适的位置名称
+
+- **城市搜索与推荐**
+  - 支持中文城市搜索
+  - 推荐城市三列网格展示
+  - 搜索结果点击后直接进入对应天气卡片
+
+- **收藏城市**
+  - 支持收藏 / 取消收藏当前城市
+  - 搜索页展示已收藏城市
+  - 支持按钮式上下排序
+
+- **天气展示**
+  - 当前温度、体感、湿度、AQI
+  - 24 小时趋势与降雨概率
+  - 多日天气、最高 / 最低温
+  - 预警与生活指数
+
+- **刷新与交互**
+  - 搜索页支持下拉刷新推荐城市
+  - Weather 页支持下拉刷新当前城市天气
+  - 支持横向分页切换多个城市天气
+
+## 技术栈
+
+- Kotlin
+- Jetpack Compose / Material 3
+- Coroutines / Flow
+- DataStore
+- Google Play Services Location
+- Ktor
+- Xiaomi Weather / Location API
+
+## 构建与发布
+
+GitHub Actions 会自动构建 **arm64-v8a Release APK** 并发布到 GitHub Releases。
+
+## 1.0.2 版本概览
+
+1.0.2 版本主要完成了以下内容：
+
+- 稳定多城市分页浏览主流程
+- 修复搜索、定位、收藏、跳转等核心链路问题
+- 增加推荐城市与当前位置卡片能力
+- 增加刷新能力与收藏排序能力
+- 优化定位命名、卡片动画与整体可读性
