@@ -80,6 +80,25 @@ class WeatherRepository(private val context: Context) {
         }
     }
 
+    suspend fun moveCity(cityId: Long, direction: Int) {
+        context.dataStore.edit { prefs ->
+            val current = runCatching {
+                val raw = prefs[KEY_SAVED_CITIES] ?: "[]"
+                json.decodeFromString<List<SavedCityDto>>(raw)
+            }.getOrDefault(emptyList()).toMutableList()
+
+            val fromIndex = current.indexOfFirst { it.id == cityId }
+            if (fromIndex < 0) return@edit
+
+            val toIndex = (fromIndex + direction).coerceIn(0, current.lastIndex)
+            if (toIndex == fromIndex) return@edit
+
+            val item = current.removeAt(fromIndex)
+            current.add(toIndex, item)
+            prefs[KEY_SAVED_CITIES] = json.encodeToString(current)
+        }
+    }
+
     suspend fun saveLastLocation(lat: Double, lon: Double, cityName: String) {
         context.dataStore.edit { prefs ->
             prefs[KEY_LAST_LAT] = lat.toString()

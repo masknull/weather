@@ -11,6 +11,7 @@ import androidx.activity.viewModels
 import androidx.compose.animation.*
 import androidx.compose.runtime.*
 import androidx.activity.compose.BackHandler
+import com.weather.app.data.model.buildCityKey
 import com.weather.app.ui.screens.HomeScreen
 import com.weather.app.ui.screens.SearchScreen
 import com.weather.app.ui.screens.WeatherScreen
@@ -73,7 +74,7 @@ class MainActivity : ComponentActivity() {
                             onBack = { route = "weather" },
                             onCitySelected = { lat, lon, name ->
                                 pendingUseCurrentLocation = false
-                                selectedCityKey = "${String.format("%.4f", lat)},${String.format("%.4f", lon)},$name"
+                                selectedCityKey = buildCityKey(lat, lon, name)
                                 route = "weather"
                             },
                             onUseCurrentLocation = {
@@ -114,10 +115,10 @@ class MainActivity : ComponentActivity() {
                 LaunchedEffect(lastLocation, route, pendingUseCurrentLocation) {
                     val ll = lastLocation
                     if (ll != null && route == "home") {
-                        selectedCityKey = "${String.format("%.4f", ll.first)},${String.format("%.4f", ll.second)},${ll.third}"
+                        selectedCityKey = buildCityKey(ll.first, ll.second, ll.third)
                         route = "weather"
                     } else if (ll != null && route == "search" && pendingUseCurrentLocation) {
-                        selectedCityKey = "${String.format("%.4f", ll.first)},${String.format("%.4f", ll.second)},${ll.third}"
+                        selectedCityKey = buildCityKey(ll.first, ll.second, ll.third)
                         pendingUseCurrentLocation = false
                         route = "weather"
                     }

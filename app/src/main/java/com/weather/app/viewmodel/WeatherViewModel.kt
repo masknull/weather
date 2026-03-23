@@ -2,6 +2,7 @@ package com.weather.app.viewmodel
 
 import android.annotation.SuppressLint
 import android.app.Application
+import android.location.Geocoder
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.location.LocationServices
@@ -9,6 +10,7 @@ import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import com.weather.app.data.model.*
 import com.weather.app.data.repository.WeatherRepository
+import java.util.Locale
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
@@ -37,9 +39,10 @@ sealed interface SearchState {
 }
 
 class WeatherViewModel(application: Application) : AndroidViewModel(application) {
+    private val appContext = getApplication<Application>()
+    private val geocoder by lazy { Geocoder(appContext, Locale.SIMPLIFIED_CHINESE) }
 
-    private fun cityKey(lat: Double, lon: Double, name: String): String =
-        "${String.format("%.4f", lat)},${String.format("%.4f", lon)},$name"
+    private fun cityKey(lat: Double, lon: Double, name: String): String = buildCityKey(lat, lon, name)
 
     private val cityLocationKeys = MutableStateFlow<Map<String, String?>>(emptyMap())
 
@@ -59,6 +62,8 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
     // Track current coordinates for saving cities
     private var currentLat: Double = 0.0
     private var currentLon: Double = 0.0
+    private var currentCityName: String? = null
+    private var currentLocationKey: String? = null
 
     private val _searchState = MutableStateFlow<SearchState>(SearchState.Idle)
     val searchState: StateFlow<SearchState> = _searchState.asStateFlow()
@@ -116,8 +121,10 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
                 // 先试 lastKnownLocation（快，无需等待 GPS 锁定）
                 val last = fusedLocation.lastLocation.await()
                 if (last != null) {
-                    loadWeather(last.latitude, last.longitude, "我的位置")
-                    repo.saveLastLocation(last.latitude, last.longitude, "我的位置")
+                    val resolvedName = resolveLocationName(last.latitude, last.longitude)
+                    cityLocationKeys.update { it + (cityKey(last.latitude, last.longitude, resolvedName) to null) }
+                    loadWeather(last.latitude, last.longitude, resolvedName)
+                    repo.saveLastLocation(last.latitude, last.longitude, resolvedName)
                     return@launch
                 }
                 // fallback: getCurrentLocation，超时 8 秒
@@ -129,8 +136,10 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
                     ).await()
                 }
                 if (location != null) {
-                    loadWeather(location.latitude, location.longitude, "我的位置")
-                    repo.saveLastLocation(location.latitude, location.longitude, "我的位置")
+                    val resolvedName = resolveLocationName(location.latitude, location.longitude)
+                    cityLocationKeys.update { it + (cityKey(location.latitude, location.longitude, resolvedName) to null) }
+                    loadWeather(location.latitude, location.longitude, resolvedName)
+                    repo.saveLastLocation(location.latitude, location.longitude, resolvedName)
                 } else {
                     _uiState.value = WeatherUiState.Error("定位失败：系统无位置信息，请检查定位开关或手动选择城市")
                 }
@@ -150,6 +159,12 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
 
     fun getCityState(lat: Double, lon: Double, name: String): WeatherUiState? {
         return cityStates.value[cityKey(lat, lon, name)]
+    }
+
+    fun refreshCity(lat: Double, lon: Double, name: String) {
+        viewModelScope.launch {
+            loadWeather(lat, lon, name)
+        }
     }
 
     fun restoreCurrentCity() {
@@ -185,6 +200,8 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
                     country = null,
                     latitude = lat,
                     longitude = lon
+                    ,
+                    locationKey = currentLocationKey
                 )
             )
         }
@@ -192,6 +209,10 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
 
     fun removeSavedCity(cityId: Long) {
         viewModelScope.launch { repo.removeCity(cityId) }
+    }
+
+    fun moveSavedCity(cityId: Long, direction: Int) {
+        viewModelScope.launch { repo.moveCity(cityId, direction) }
     }
 
     fun removeCurrentCity() {
@@ -289,7 +310,9 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
         _cityStates.update { it + (key to WeatherUiState.Loading) }
         currentLat = lat
         currentLon = lon
-        repo.getXiaomiWeather(lat, lon, cityLocationKeys.value[key]).fold(
+        currentCityName = name
+        currentLocationKey = cityLocationKeys.value[key]
+        repo.getXiaomiWeather(lat, lon, currentLocationKey).fold(
             onSuccess = {
                 val success = WeatherUiState.SuccessXiaomi(name, it)
                 _uiState.value = success
@@ -303,5 +326,17 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
                 _cityStates.update { map -> map + (key to error) }
             }
         )
+    }
+
+    private fun resolveLocationName(lat: Double, lon: Double): String {
+        return runCatching {
+            val address = geocoder.getFromLocation(lat, lon, 1)?.firstOrNull()
+            listOfNotNull(
+                address?.locality,
+                address?.subAdminArea,
+                address?.adminArea,
+                address?.featureName
+            ).firstOrNull { it.isNotBlank() }
+        }.getOrNull()?.trim().orEmpty().ifBlank { "我的位置" }
     }
 }

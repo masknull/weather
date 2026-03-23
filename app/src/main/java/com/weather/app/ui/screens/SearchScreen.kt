@@ -7,14 +7,16 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.*
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -38,7 +40,8 @@ fun SearchScreen(
     val searchState by viewModel.searchState.collectAsState()
     val savedCities by viewModel.savedCities.collectAsState(emptyList())
     val hotCities by viewModel.hotCities.collectAsState()
-    val focusRequester = remember { FocusRequester() }
+    val isRefreshing = searchState is SearchState.Loading && searchQuery.isBlank()
+    val pullRefreshState = rememberPullToRefreshState()
 
     LaunchedEffect(Unit) {
         viewModel.clearSearch()
@@ -125,72 +128,93 @@ fun SearchScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            when (val state = searchState) {
-                is SearchState.Idle -> {
-                    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        if (savedCities.isNotEmpty()) {
-                            item {
-                                Text("已保存城市", color = TextSecondary, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                                Spacer(Modifier.height(8.dp))
-                            }
-                            items(savedCities) { city ->
-                                SavedCityRow(
-                                    city = city,
-                                    onClick = {
-                                        viewModel.loadCity(city.latitude, city.longitude, city.name, locationKey = city.locationKey)
-                                        onCitySelected(city.latitude, city.longitude, city.name)
-                                    },
-                                    onDelete = { viewModel.removeSavedCity(city.id) }
-                                )
-                            }
-                        }
-                        if (hotCities.isNotEmpty()) {
-                            item {
-                                Spacer(Modifier.height(if (savedCities.isNotEmpty()) 8.dp else 0.dp))
-                                Text("推荐城市", color = TextSecondary, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                                Spacer(Modifier.height(8.dp))
-                                HotCitiesGrid(
-                                    cities = hotCities,
-                                    onClick = { city ->
-                                        viewModel.loadCity(city.latitude, city.longitude, city.displayName, locationKey = city.locationKey)
-                                        onCitySelected(city.latitude, city.longitude, city.displayName)
-                                    }
-                                )
-                            }
-                        }
-                        if (savedCities.isEmpty() && hotCities.isEmpty()) {
-                            item {
-                                Box(Modifier.fillMaxWidth().padding(top = 48.dp), contentAlignment = Alignment.Center) {
-                                    Text("先搜索一个城市开始使用", color = TextSecondary)
-                                }
-                            }
-                        }
-                    }
-                }
-                is SearchState.Loading -> {
-                    Box(Modifier.fillMaxWidth().padding(top = 48.dp), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp)
-                    }
-                }
-                is SearchState.Results -> {
-                    if (state.locations.isEmpty()) {
-                        Box(Modifier.fillMaxWidth().padding(top = 48.dp), contentAlignment = Alignment.Center) {
-                            Text("没有搜到结果", color = TextSecondary)
-                        }
-                    } else {
+            PullToRefreshBox(
+                isRefreshing = isRefreshing,
+                onRefresh = {
+                    viewModel.clearSearch()
+                    viewModel.loadHotCities()
+                },
+                state = pullRefreshState,
+                modifier = Modifier.fillMaxSize()
+            ) {
+                when (val state = searchState) {
+                    is SearchState.Idle -> {
                         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            items(state.locations) { loc ->
-                                LocationRow(loc) {
-                                    viewModel.loadCity(loc.latitude, loc.longitude, loc.displayName, locationKey = loc.locationKey)
-                                    onCitySelected(loc.latitude, loc.longitude, loc.displayName)
+                            if (savedCities.isNotEmpty()) {
+                                item {
+                                    Text("已保存城市", color = TextSecondary, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                                    Spacer(Modifier.height(8.dp))
+                                }
+                                items(savedCities) { city ->
+                                    SavedCityRow(
+                                        city = city,
+                                        canMoveUp = savedCities.indexOf(city) > 0,
+                                        canMoveDown = savedCities.indexOf(city) < savedCities.lastIndex,
+                                        onClick = {
+                                            viewModel.loadCity(city.latitude, city.longitude, city.name, locationKey = city.locationKey)
+                                            onCitySelected(city.latitude, city.longitude, city.name)
+                                        },
+                                        onDelete = { viewModel.removeSavedCity(city.id) },
+                                        onMoveUp = { viewModel.moveSavedCity(city.id, -1) },
+                                        onMoveDown = { viewModel.moveSavedCity(city.id, 1) }
+                                    )
+                                }
+                            }
+                            if (hotCities.isNotEmpty()) {
+                                item {
+                                    Spacer(Modifier.height(if (savedCities.isNotEmpty()) 8.dp else 0.dp))
+                                    Text("推荐城市", color = TextSecondary, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                                    Spacer(Modifier.height(8.dp))
+                                    HotCitiesGrid(
+                                        cities = hotCities,
+                                        onClick = { city ->
+                                            viewModel.loadCity(city.latitude, city.longitude, city.displayName, locationKey = city.locationKey)
+                                            onCitySelected(city.latitude, city.longitude, city.displayName)
+                                        }
+                                    )
+                                }
+                            }
+                            if (savedCities.isEmpty() && hotCities.isEmpty()) {
+                                item {
+                                    Box(Modifier.fillMaxWidth().padding(top = 48.dp), contentAlignment = Alignment.Center) {
+                                        Text("先搜索一个城市开始使用", color = TextSecondary)
+                                    }
                                 }
                             }
                         }
                     }
-                }
-                is SearchState.Error -> {
-                    Box(Modifier.fillMaxWidth().padding(top = 48.dp), contentAlignment = Alignment.Center) {
-                        Text(state.message, color = Color(0xFFFF6B6B))
+                    is SearchState.Loading -> {
+                        Box(Modifier.fillMaxWidth().padding(top = 48.dp), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp)
+                        }
+                    }
+                    is SearchState.Results -> {
+                        if (state.locations.isEmpty()) {
+                            Box(Modifier.fillMaxWidth().padding(top = 48.dp), contentAlignment = Alignment.Center) {
+                                Text("没有搜到结果", color = TextSecondary)
+                            }
+                        } else {
+                            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                items(state.locations) { loc ->
+                                    LocationRow(loc) {
+                                        viewModel.loadCity(loc.latitude, loc.longitude, loc.displayName, locationKey = loc.locationKey)
+                                        onCitySelected(loc.latitude, loc.longitude, loc.displayName)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    is SearchState.Error -> {
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(top = 48.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Text(state.message, color = Color(0xFFFF6B6B))
+                            if (hotCities.isNotEmpty()) {
+                                Text("下拉可重新加载推荐城市", color = TextSecondary, fontSize = 12.sp)
+                            }
+                        }
                     }
                 }
             }
@@ -240,7 +264,15 @@ fun HotCitiesGrid(cities: List<GeoLocation>, onClick: (GeoLocation) -> Unit) {
 }
 
 @Composable
-fun SavedCityRow(city: SavedCity, onClick: () -> Unit, onDelete: () -> Unit) {
+fun SavedCityRow(
+    city: SavedCity,
+    canMoveUp: Boolean,
+    canMoveDown: Boolean,
+    onClick: () -> Unit,
+    onDelete: () -> Unit,
+    onMoveUp: () -> Unit,
+    onMoveDown: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -252,6 +284,12 @@ fun SavedCityRow(city: SavedCity, onClick: () -> Unit, onDelete: () -> Unit) {
         Icon(Icons.Default.Bookmark, contentDescription = null, tint = SunYellow, modifier = Modifier.size(18.dp))
         Spacer(Modifier.width(12.dp))
         Text(city.name, color = Color.White, fontSize = 15.sp, modifier = Modifier.weight(1f))
+        IconButton(onClick = onMoveUp, enabled = canMoveUp, modifier = Modifier.size(32.dp)) {
+            Icon(Icons.Default.ArrowUpward, contentDescription = "上移", tint = if (canMoveUp) TextSecondary else TextSecondary.copy(alpha = 0.4f), modifier = Modifier.size(16.dp))
+        }
+        IconButton(onClick = onMoveDown, enabled = canMoveDown, modifier = Modifier.size(32.dp)) {
+            Icon(Icons.Default.ArrowDownward, contentDescription = "下移", tint = if (canMoveDown) TextSecondary else TextSecondary.copy(alpha = 0.4f), modifier = Modifier.size(16.dp))
+        }
         IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
             Icon(Icons.Default.Delete, contentDescription = "删除", tint = TextSecondary, modifier = Modifier.size(16.dp))
         }

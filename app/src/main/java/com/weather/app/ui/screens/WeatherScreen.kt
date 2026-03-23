@@ -11,8 +11,6 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerDefaults
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.runtime.rememberCoroutineScope
-import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -30,7 +28,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
-import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -48,6 +46,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.weather.app.data.model.buildCityKey
 import com.weather.app.ui.components.GlassCard
 import com.weather.app.ui.components.StatTile
 import com.weather.app.ui.components.weatherEmoji
@@ -63,7 +62,19 @@ private data class PagerCity(
     val longitude: Double,
     val isCurrent: Boolean = false
 ) {
-    val key: String get() = "${String.format("%.4f", latitude)},${String.format("%.4f", longitude)},$name"
+    val key: String get() = buildCityKey(latitude, longitude, name)
+}
+
+private fun parseCityKey(key: String?): Triple<Double, Double, String>? {
+    if (key.isNullOrBlank()) return null
+    val firstComma = key.indexOf(',')
+    val secondComma = key.indexOf(',', firstComma + 1)
+    if (firstComma <= 0 || secondComma <= firstComma) return null
+    val lat = key.substring(0, firstComma).toDoubleOrNull() ?: return null
+    val lon = key.substring(firstComma + 1, secondComma).toDoubleOrNull() ?: return null
+    val name = key.substring(secondComma + 1)
+    if (name.isBlank()) return null
+    return Triple(lat, lon, name)
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -77,24 +88,37 @@ fun WeatherScreen(
     val uiState by viewModel.uiState.collectAsState()
     val cityStates by viewModel.cityStates.collectAsState()
     val savedCities by viewModel.savedCities.collectAsState()
-    val lastLocation by viewModel.lastLocation.collectAsState()
-    val scope = rememberCoroutineScope()
+    val lastLocation by viewModel.lastLocation.collectAsState(initial = null)
 
-    val selectedState = selectedCityKey?.let { cityStates[it] }
-    val selectedTransientCity = if (selectedState is WeatherUiState.SuccessXiaomi) {
+    val parsedSelected = parseCityKey(selectedCityKey)
+    val selectedTransientCity = if (parsedSelected != null) {
         PagerCity(
             id = selectedCityKey.hashCode().toLong(),
-            name = selectedState.cityName,
-            latitude = lastLocation?.first ?: 0.0,
-            longitude = lastLocation?.second ?: 0.0,
+            name = parsedSelected.third,
+            latitude = parsedSelected.first,
+            longitude = parsedSelected.second,
             isCurrent = true
         )
     } else null
 
-    val pagerCities = remember(savedCities, selectedCityKey, selectedTransientCity) {
+    val fallbackCity = remember(lastLocation) {
+        lastLocation?.let {
+            PagerCity(
+                id = buildCityKey(it.first, it.second, it.third).hashCode().toLong(),
+                name = it.third,
+                latitude = it.first,
+                longitude = it.second,
+                isCurrent = true
+            )
+        }
+    }
+
+    val pagerCities = remember(savedCities, selectedCityKey, selectedTransientCity, fallbackCity) {
         buildList {
-            if (selectedTransientCity != null && savedCities.none { "${String.format("%.4f", it.latitude)},${String.format("%.4f", it.longitude)},${it.name}" == selectedCityKey }) {
+            if (selectedTransientCity != null && savedCities.none { buildCityKey(it.latitude, it.longitude, it.name) == selectedCityKey }) {
                 add(selectedTransientCity)
+            } else if (fallbackCity != null && savedCities.none { buildCityKey(it.latitude, it.longitude, it.name) == fallbackCity.key }) {
+                add(fallbackCity)
             }
             addAll(savedCities.map {
                 PagerCity(
@@ -124,7 +148,9 @@ fun WeatherScreen(
     LaunchedEffect(pagerState.settledPage, pagerCities) {
         val city = pagerCities.getOrNull(pagerState.settledPage)
         if (city != null) {
-            onSelectedCityChange(city.key)
+            if (selectedCityKey != city.key) {
+                onSelectedCityChange(city.key)
+            }
             val current = cityStates[city.key]
             if (current !is WeatherUiState.SuccessXiaomi && current !is WeatherUiState.Loading) {
                 viewModel.loadCity(city.latitude, city.longitude, city.name, saveAsLast = false)
@@ -296,9 +322,17 @@ private fun XiaomiSuccessContent(
                 }
             }
             // 按钮区域（固定右侧）
-            val isSaved = pagerCities.any { !it.isCurrent && it.name == state.cityName }
+            val currentKey = buildCityKey(stateCityLat(pagerCities, currentPage), stateCityLon(pagerCities, currentPage), state.cityName)
+            val isSaved = pagerCities.any { !it.isCurrent && it.key == currentKey }
             IconButton(onClick = { if (isSaved) viewModel.removeCurrentCity() else viewModel.saveCurrentCity() }) {
                 Icon(if (isSaved) Icons.Default.Bookmark else Icons.Default.BookmarkBorder, contentDescription = if (isSaved) "已收藏" else "收藏", tint = Color.White)
+            }
+            IconButton(onClick = {
+                pagerCities.getOrNull(currentPage)?.let { city ->
+                    viewModel.refreshCity(city.latitude, city.longitude, city.name)
+                }
+            }) {
+                Icon(Icons.Default.Refresh, contentDescription = "刷新", tint = Color.White)
             }
             IconButton(onClick = onSearchClick) {
                 Icon(Icons.Default.Search, contentDescription = "搜索", tint = Color.White)
@@ -484,7 +518,7 @@ private fun XiaomiSuccessContent(
                                 ) {
                                     Text(hTimes.getOrNull(idx) ?: "", color = Color.White.copy(alpha = 0.9f), fontSize = 10.sp)
                                     Text(weatherEmojiFromText(xiaomiWeatherDesc(hWeathers.getOrNull(idx))), fontSize = 20.sp)
-                                    if (precipPct > 0) Text("${precipPct}%", color = Color(0xFFD6F0FF), fontSize = 10.sp)
+                                    if (precipPct > 0) Text("${precipPct}%", color = Color(0xFFCDEBFF), fontSize = 10.sp)
                                 }
                             }
                         }
@@ -589,6 +623,12 @@ private fun XiaomiSuccessContent(
         Spacer(Modifier.height(24.dp))
     }
 }
+
+private fun stateCityLat(pagerCities: List<PagerCity>, currentPage: Int): Double =
+    pagerCities.getOrNull(currentPage)?.latitude ?: 0.0
+
+private fun stateCityLon(pagerCities: List<PagerCity>, currentPage: Int): Double =
+    pagerCities.getOrNull(currentPage)?.longitude ?: 0.0
 
 @Composable
 private fun LegacySuccessContent(

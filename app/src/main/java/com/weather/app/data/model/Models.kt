@@ -3,6 +3,11 @@ package com.weather.app.data.model
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+fun formatCityCoordinate(value: Double): String = String.format("%.4f", value)
+
+fun buildCityKey(lat: Double, lon: Double, name: String): String =
+    "${formatCityCoordinate(lat)},${formatCityCoordinate(lon)},$name"
+
 // ── Geocoding ────────────────────────────────────────────────────────────────
 
 @Serializable
