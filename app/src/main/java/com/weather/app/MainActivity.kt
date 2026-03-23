@@ -52,6 +52,10 @@ class MainActivity : ComponentActivity() {
                 val lastLocation by viewModel.lastLocation.collectAsState(initial = null)
                 val currentLocationSelection by viewModel.currentLocationSelection.collectAsState(initial = null)
 
+                LaunchedEffect(Unit) {
+                    viewModel.fetchCurrentLocation()
+                }
+
                 AnimatedContent(
                     targetState = route,
                     transitionSpec = {
