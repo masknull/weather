@@ -137,7 +137,7 @@ fun WeatherScreen(
             if (fallbackCity != null && savedCities.none { buildCityKey(it.latitude, it.longitude, it.name) == fallbackCity.key }) {
                 add(fallbackCity)
             }
-        }
+        }.distinctBy { it.key }
     }
 
     val pageCount = maxOf(1, pagerCities.size)
