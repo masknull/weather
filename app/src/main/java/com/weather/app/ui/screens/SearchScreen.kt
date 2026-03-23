@@ -31,7 +31,8 @@ import com.weather.app.viewmodel.WeatherViewModel
 fun SearchScreen(
     viewModel: WeatherViewModel,
     onBack: () -> Unit,
-    onCitySelected: (Double, Double, String) -> Unit
+    onCitySelected: (Double, Double, String) -> Unit,
+    onUseCurrentLocation: () -> Unit
 ) {
     val searchQuery by viewModel.searchQuery.collectAsState()
     val searchState by viewModel.searchState.collectAsState()
@@ -98,9 +99,8 @@ fun SearchScreen(
             // Quick entry: use current location
             ElevatedCard(
                 onClick = {
-                    val last = viewModel.lastLocation.value
+                    onUseCurrentLocation()
                     viewModel.fetchCurrentLocation()
-                    if (last != null) onCitySelected(last.first, last.second, last.third) else onBack()
                 },
                 shape = RoundedCornerShape(12.dp),
                 elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp),

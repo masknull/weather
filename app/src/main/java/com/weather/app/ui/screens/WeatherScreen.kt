@@ -23,7 +23,6 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.util.lerp
 import androidx.compose.ui.draw.alpha
-import kotlin.math.abs
 import androidx.compose.foundation.Canvas
 import androidx.compose.ui.graphics.Path as GPath
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -81,10 +80,23 @@ fun WeatherScreen(
     val lastLocation by viewModel.lastLocation.collectAsState()
     val scope = rememberCoroutineScope()
 
-    val pagerCities = remember(savedCities, lastLocation) {
+    val selectedState = selectedCityKey?.let { cityStates[it] }
+    val selectedTransientCity = if (selectedState is WeatherUiState.SuccessXiaomi) {
+        PagerCity(
+            id = selectedCityKey.hashCode().toLong(),
+            name = selectedState.cityName,
+            latitude = lastLocation?.first ?: 0.0,
+            longitude = lastLocation?.second ?: 0.0,
+            isCurrent = true
+        )
+    } else null
+
+    val pagerCities = remember(savedCities, selectedCityKey, selectedTransientCity) {
         buildList {
-            val current = lastLocation
-            val savedAsPager = savedCities.map {
+            if (selectedTransientCity != null && savedCities.none { "${String.format("%.4f", it.latitude)},${String.format("%.4f", it.longitude)},${it.name}" == selectedCityKey }) {
+                add(selectedTransientCity)
+            }
+            addAll(savedCities.map {
                 PagerCity(
                     id = it.id,
                     name = it.name,
@@ -92,23 +104,7 @@ fun WeatherScreen(
                     longitude = it.longitude,
                     isCurrent = false
                 )
-            }
-            val currentPager = current?.let {
-                PagerCity(
-                    id = "current:${it.first}:${it.second}:${it.third}".hashCode().toLong(),
-                    name = it.third,
-                    latitude = it.first,
-                    longitude = it.second,
-                    isCurrent = true
-                )
-            }
-            if (currentPager != null && savedAsPager.none {
-                    kotlin.math.abs(it.latitude - currentPager.latitude) < 1e-6 &&
-                    kotlin.math.abs(it.longitude - currentPager.longitude) < 1e-6
-                }) {
-                add(currentPager)
-            }
-            addAll(savedAsPager)
+            })
         }
     }
 
@@ -129,10 +125,7 @@ fun WeatherScreen(
         val city = pagerCities.getOrNull(pagerState.settledPage)
         if (city != null) {
             onSelectedCityChange(city.key)
-            val cached = cityStates[city.key]
-            if (cached == null) {
-                viewModel.loadCity(city.latitude, city.longitude, city.name, saveAsLast = false)
-            }
+            viewModel.loadCity(city.latitude, city.longitude, city.name, saveAsLast = false)
         }
     }
 

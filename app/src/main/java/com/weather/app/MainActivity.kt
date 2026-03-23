@@ -46,6 +46,7 @@ class MainActivity : ComponentActivity() {
             WeatherTheme {
                 var route by remember { mutableStateOf("home") }
                 var selectedCityKey by remember { mutableStateOf<String?>(null) }
+                var pendingUseCurrentLocation by remember { mutableStateOf(false) }
                 val uiState by viewModel.uiState.collectAsState()
                 val lastLocation by viewModel.lastLocation.collectAsState(initial = null)
 
@@ -71,8 +72,12 @@ class MainActivity : ComponentActivity() {
                             viewModel = viewModel,
                             onBack = { route = "weather" },
                             onCitySelected = { lat, lon, name ->
+                                pendingUseCurrentLocation = false
                                 selectedCityKey = "${String.format("%.4f", lat)},${String.format("%.4f", lon)},$name"
                                 route = "weather"
+                            },
+                            onUseCurrentLocation = {
+                                pendingUseCurrentLocation = true
                             }
                         )
                         "weather" -> WeatherScreen(
@@ -106,11 +111,15 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                LaunchedEffect(lastLocation) {
+                LaunchedEffect(lastLocation, route, pendingUseCurrentLocation) {
                     val ll = lastLocation
                     if (ll != null && route == "home") {
                         selectedCityKey = "${String.format("%.4f", ll.first)},${String.format("%.4f", ll.second)},${ll.third}"
                         viewModel.loadCity(ll.first, ll.second, ll.third)
+                        route = "weather"
+                    } else if (ll != null && route == "search" && pendingUseCurrentLocation) {
+                        selectedCityKey = "${String.format("%.4f", ll.first)},${String.format("%.4f", ll.second)},${ll.third}"
+                        pendingUseCurrentLocation = false
                         route = "weather"
                     }
                 }
