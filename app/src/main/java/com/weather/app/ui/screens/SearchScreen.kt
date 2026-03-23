@@ -215,7 +215,6 @@ fun LocationRow(location: GeoLocation, onClick: () -> Unit) {
 }
 
 @Composable
-@Composable
 fun HotCitiesGrid(cities: List<GeoLocation>, onClick: (GeoLocation) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         cities.chunked(3).forEach { row ->
