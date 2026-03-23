@@ -319,27 +319,33 @@ fun SavedCityRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .offset { IntOffset(0, dragOffsetY.roundToInt()) }
-            .pointerInput(city.id) {
-                detectDragGesturesAfterLongPress(
-                    onDragStart = { onDragStart() },
-                    onDragEnd = { onDragEnd() },
-                    onDragCancel = { onDragEnd() },
-                    onDrag = { change, dragAmount ->
-                        change.consume()
-                        onDrag(dragAmount.y)
-                    }
-                )
-            }
-            .clickable(onClick = onClick)
             .background(if (isDragging) CardWhite.copy(alpha = 0.9f) else CardWhite, RoundedCornerShape(12.dp))
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .offset { IntOffset(0, dragOffsetY.roundToInt()) },
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(Icons.Default.Bookmark, contentDescription = null, tint = SunYellow, modifier = Modifier.size(18.dp))
         Spacer(Modifier.width(12.dp))
-        Text(city.name, color = Color.White, fontSize = 15.sp, modifier = Modifier.weight(1f))
-        Text("长按拖动", color = TextSecondary, fontSize = 11.sp)
+        Row(
+            modifier = Modifier
+                .weight(1f)
+                .pointerInput(city.id) {
+                    detectDragGesturesAfterLongPress(
+                        onDragStart = { onDragStart() },
+                        onDragEnd = { onDragEnd() },
+                        onDragCancel = { onDragEnd() },
+                        onDrag = { change, dragAmount ->
+                            change.consume()
+                            onDrag(dragAmount.y)
+                        }
+                    )
+                }
+                .clickable(onClick = onClick),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(city.name, color = Color.White, fontSize = 15.sp, modifier = Modifier.weight(1f))
+            Text("长按拖动", color = TextSecondary, fontSize = 11.sp)
+        }
         Spacer(Modifier.width(8.dp))
         IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
             Icon(Icons.Default.Delete, contentDescription = "删除", tint = TextSecondary, modifier = Modifier.size(16.dp))

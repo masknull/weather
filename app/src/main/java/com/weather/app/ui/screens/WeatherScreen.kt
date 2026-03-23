@@ -53,6 +53,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.weather.app.data.model.buildCityKey
+import com.weather.app.data.model.SavedCity
 import com.weather.app.ui.components.GlassCard
 import com.weather.app.ui.components.StatTile
 import com.weather.app.ui.components.weatherEmoji
@@ -221,7 +222,7 @@ fun WeatherScreen(
                 when (state) {
                     is WeatherUiState.Idle -> IdleContent(viewModel)
                     is WeatherUiState.Loading -> LoadingContent()
-                    is WeatherUiState.SuccessXiaomi -> XiaomiSuccessContent(state, viewModel, onSearchClick, pagerCities, page, pagerState.currentPageOffsetFraction)
+                    is WeatherUiState.SuccessXiaomi -> XiaomiSuccessContent(state, viewModel, onSearchClick, pagerCities, savedCities, page, pagerState.currentPageOffsetFraction)
                     is WeatherUiState.Success -> LegacySuccessContent(state, viewModel, onSearchClick, savedCities)
                     is WeatherUiState.Error -> ErrorContent(state.message) { viewModel.retry() }
                 }
@@ -307,6 +308,7 @@ private fun XiaomiSuccessContent(
     viewModel: WeatherViewModel,
     onSearchClick: () -> Unit,
     pagerCities: List<PagerCity> = emptyList(),
+    savedCities: List<SavedCity> = emptyList(),
     currentPage: Int = 0,
     pageOffset: Float = 0f
 ) {
@@ -354,8 +356,12 @@ private fun XiaomiSuccessContent(
                 }
             }
             // 按钮区域（固定右侧）
-            val currentKey = buildCityKey(stateCityLat(pagerCities, currentPage), stateCityLon(pagerCities, currentPage), state.cityName)
-            val isSaved = pagerCities.any { !it.isCurrent && it.key == currentKey }
+            val currentLat = stateCityLat(pagerCities, currentPage)
+            val currentLon = stateCityLon(pagerCities, currentPage)
+            val isSaved = savedCities.any {
+                kotlin.math.abs(it.latitude - currentLat) < 0.0001 &&
+                    kotlin.math.abs(it.longitude - currentLon) < 0.0001
+            }
             IconButton(onClick = { if (isSaved) viewModel.removeCurrentCity() else viewModel.saveCurrentCity() }) {
                 Icon(if (isSaved) Icons.Default.Bookmark else Icons.Default.BookmarkBorder, contentDescription = if (isSaved) "已收藏" else "收藏", tint = Color.White)
             }

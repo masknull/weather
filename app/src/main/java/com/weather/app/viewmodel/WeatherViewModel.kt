@@ -245,7 +245,11 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
             else -> null
         } ?: return
         if (lat == 0.0 && lon == 0.0) return
-        val cityId = "$name:$lat:$lon".hashCode().toLong()
+        val matchedCity = savedCities.value.firstOrNull {
+            kotlin.math.abs(it.latitude - lat) < 0.0001 &&
+                kotlin.math.abs(it.longitude - lon) < 0.0001
+        }
+        val cityId = matchedCity?.id ?: "$name:$lat:$lon".hashCode().toLong()
         viewModelScope.launch { repo.removeCity(cityId) }
     }
 
@@ -352,21 +356,33 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
         return runCatching {
             val address = geocoder.getFromLocation(lat, lon, 1)?.firstOrNull()
             buildList {
-                address?.thoroughfare?.takeIf { it.isNotBlank() }?.let { add(it) }
-                address?.subThoroughfare?.takeIf { it.isNotBlank() }?.let { add(it) }
-                address?.featureName?.takeIf { it.isNotBlank() }?.let { add(it) }
-                address?.premises?.takeIf { it.isNotBlank() }?.let { add(it) }
-                address?.subLocality?.takeIf { it.isNotBlank() }?.let { add(it) }
+                address?.thoroughfare?.takeIf { it.isNotBlank() && !it.isAdministrativeDivision() }?.let { add(it) }
+                address?.subThoroughfare?.takeIf { it.isNotBlank() && !it.isAdministrativeDivision() }?.let { add(it) }
+                address?.featureName?.takeIf { it.isNotBlank() && !it.isAdministrativeDivision() }?.let { add(it) }
+                address?.premises?.takeIf { it.isNotBlank() && !it.isAdministrativeDivision() }?.let { add(it) }
+                address?.subLocality?.takeIf { it.isNotBlank() && !it.isAdministrativeDivision() }?.let { add(it) }
             }
                 .distinct()
                 .joinToString(separator = "")
                 .ifBlank {
                     listOfNotNull(
-                        address?.subLocality?.takeIf { it.isNotBlank() },
-                        address?.featureName?.takeIf { it.isNotBlank() },
-                        address?.locality?.takeIf { it.isNotBlank() }
+                        address?.featureName?.takeIf { it.isNotBlank() && !it.isAdministrativeDivision() },
+                        address?.thoroughfare?.takeIf { it.isNotBlank() && !it.isAdministrativeDivision() },
+                        address?.subLocality?.takeIf { it.isNotBlank() && !it.isAdministrativeDivision() },
+                        address?.locality?.takeIf { it.isNotBlank() && !it.isAdministrativeDivision() }
                     ).firstOrNull()
                 }
         }.getOrNull()?.trim().orEmpty().ifBlank { "我的位置" }
+    }
+
+    private fun String.isAdministrativeDivision(): Boolean {
+        val value = trim()
+        return value.endsWith("市") ||
+            value.endsWith("区") ||
+            value.endsWith("县") ||
+            value.endsWith("自治县") ||
+            value.endsWith("旗") ||
+            value.endsWith("自治旗") ||
+            value.endsWith("省")
     }
 }
