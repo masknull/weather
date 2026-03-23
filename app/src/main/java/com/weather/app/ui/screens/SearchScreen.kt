@@ -155,7 +155,7 @@ fun SearchScreen(
                                         canMoveUp = savedCities.indexOf(city) > 0,
                                         canMoveDown = savedCities.indexOf(city) < savedCities.lastIndex,
                                         onClick = {
-                                            viewModel.loadCity(city.latitude, city.longitude, city.name, locationKey = city.locationKey)
+                                            viewModel.rememberCitySelection(city.latitude, city.longitude, city.name, locationKey = city.locationKey)
                                             onCitySelected(city.latitude, city.longitude, city.name)
                                         },
                                         onDelete = { viewModel.removeSavedCity(city.id) },
@@ -172,7 +172,7 @@ fun SearchScreen(
                                     HotCitiesGrid(
                                         cities = hotCities,
                                         onClick = { city ->
-                                            viewModel.loadCity(city.latitude, city.longitude, city.displayName, locationKey = city.locationKey)
+                                            viewModel.rememberCitySelection(city.latitude, city.longitude, city.displayName, locationKey = city.locationKey)
                                             onCitySelected(city.latitude, city.longitude, city.displayName)
                                         }
                                     )
@@ -201,7 +201,7 @@ fun SearchScreen(
                             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 items(state.locations) { loc ->
                                     LocationRow(loc) {
-                                        viewModel.loadCity(loc.latitude, loc.longitude, loc.displayName, locationKey = loc.locationKey)
+                                        viewModel.rememberCitySelection(loc.latitude, loc.longitude, loc.displayName, locationKey = loc.locationKey)
                                         onCitySelected(loc.latitude, loc.longitude, loc.displayName)
                                     }
                                 }

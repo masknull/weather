@@ -50,6 +50,7 @@ class MainActivity : ComponentActivity() {
                 var pendingUseCurrentLocation by remember { mutableStateOf(false) }
                 val uiState by viewModel.uiState.collectAsState()
                 val lastLocation by viewModel.lastLocation.collectAsState(initial = null)
+                val currentLocationSelection by viewModel.currentLocationSelection.collectAsState(initial = null)
 
                 AnimatedContent(
                     targetState = route,
@@ -112,13 +113,18 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                LaunchedEffect(lastLocation, route, pendingUseCurrentLocation) {
+                LaunchedEffect(lastLocation, route) {
                     val ll = lastLocation
                     if (ll != null && route == "home") {
                         selectedCityKey = buildCityKey(ll.first, ll.second, ll.third)
                         route = "weather"
-                    } else if (ll != null && route == "search" && pendingUseCurrentLocation) {
-                        selectedCityKey = buildCityKey(ll.first, ll.second, ll.third)
+                    }
+                }
+
+                LaunchedEffect(currentLocationSelection, route, pendingUseCurrentLocation) {
+                    val current = currentLocationSelection
+                    if (current != null && route == "search" && pendingUseCurrentLocation) {
+                        selectedCityKey = buildCityKey(current.latitude, current.longitude, current.name)
                         pendingUseCurrentLocation = false
                         route = "weather"
                     }

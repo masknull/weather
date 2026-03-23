@@ -38,6 +38,13 @@ sealed interface SearchState {
     data class Error(val message: String) : SearchState
 }
 
+data class ResolvedLocationSelection(
+    val latitude: Double,
+    val longitude: Double,
+    val name: String,
+    val token: Long = System.currentTimeMillis()
+)
+
 class WeatherViewModel(application: Application) : AndroidViewModel(application) {
     private val appContext = getApplication<Application>()
     private val geocoder by lazy { Geocoder(appContext, Locale.SIMPLIFIED_CHINESE) }
@@ -73,6 +80,9 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
 
     private val _hotCities = MutableStateFlow<List<GeoLocation>>(emptyList())
     val hotCities: StateFlow<List<GeoLocation>> = _hotCities.asStateFlow()
+
+    private val _currentLocationSelection = MutableStateFlow<ResolvedLocationSelection?>(null)
+    val currentLocationSelection: StateFlow<ResolvedLocationSelection?> = _currentLocationSelection.asStateFlow()
 
     val savedCities: StateFlow<List<SavedCity>> = repo.savedCities
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -123,6 +133,7 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
                 if (last != null) {
                     val resolvedName = resolveLocationName(last.latitude, last.longitude)
                     cityLocationKeys.update { it + (cityKey(last.latitude, last.longitude, resolvedName) to null) }
+                    _currentLocationSelection.value = ResolvedLocationSelection(last.latitude, last.longitude, resolvedName)
                     loadWeather(last.latitude, last.longitude, resolvedName)
                     repo.saveLastLocation(last.latitude, last.longitude, resolvedName)
                     return@launch
@@ -138,6 +149,7 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
                 if (location != null) {
                     val resolvedName = resolveLocationName(location.latitude, location.longitude)
                     cityLocationKeys.update { it + (cityKey(location.latitude, location.longitude, resolvedName) to null) }
+                    _currentLocationSelection.value = ResolvedLocationSelection(location.latitude, location.longitude, resolvedName)
                     loadWeather(location.latitude, location.longitude, resolvedName)
                     repo.saveLastLocation(location.latitude, location.longitude, resolvedName)
                 } else {
@@ -155,6 +167,10 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
             loadWeather(lat, lon, name)
             if (saveAsLast) repo.saveLastLocation(lat, lon, name)
         }
+    }
+
+    fun rememberCitySelection(lat: Double, lon: Double, name: String, locationKey: String? = null) {
+        cityLocationKeys.update { it + (cityKey(lat, lon, name) to locationKey) }
     }
 
     fun getCityState(lat: Double, lon: Double, name: String): WeatherUiState? {
@@ -331,12 +347,18 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
     private fun resolveLocationName(lat: Double, lon: Double): String {
         return runCatching {
             val address = geocoder.getFromLocation(lat, lon, 1)?.firstOrNull()
-            listOfNotNull(
-                address?.locality,
-                address?.subAdminArea,
-                address?.adminArea,
-                address?.featureName
-            ).firstOrNull { it.isNotBlank() }
+            buildList {
+                address?.locality?.takeIf { it.isNotBlank() }?.let { add(it) }
+                address?.subLocality?.takeIf { it.isNotBlank() }?.let { add(it) }
+                address?.thoroughfare?.takeIf { it.isNotBlank() }?.let { add(it) }
+                address?.subThoroughfare?.takeIf { it.isNotBlank() }?.let { add(it) }
+                address?.featureName?.takeIf { it.isNotBlank() }?.let { add(it) }
+                address?.subAdminArea?.takeIf { it.isNotBlank() }?.let { add(it) }
+                address?.adminArea?.takeIf { it.isNotBlank() }?.let { add(it) }
+            }
+                .distinct()
+                .joinToString(separator = "")
+                .ifBlank { null }
         }.getOrNull()?.trim().orEmpty().ifBlank { "我的位置" }
     }
 }

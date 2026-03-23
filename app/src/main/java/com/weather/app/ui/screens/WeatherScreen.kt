@@ -141,7 +141,7 @@ fun WeatherScreen(
     LaunchedEffect(selectedCityKey, pagerCities) {
         val index = pagerCities.indexOfFirst { it.key == selectedCityKey }
         if (index >= 0 && pagerState.currentPage != index) {
-            pagerState.scrollToPage(index)
+            pagerState.animateScrollToPage(index)
         }
     }
 
