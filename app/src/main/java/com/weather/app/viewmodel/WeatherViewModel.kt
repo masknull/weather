@@ -42,6 +42,7 @@ data class ResolvedLocationSelection(
     val latitude: Double,
     val longitude: Double,
     val name: String,
+    val shortName: String,
     val token: Long = System.currentTimeMillis()
 )
 
@@ -132,8 +133,9 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
                 val last = fusedLocation.lastLocation.await()
                 if (last != null) {
                     val resolvedName = resolveLocationName(last.latitude, last.longitude)
+                    val shortName = resolveLocationShortName(last.latitude, last.longitude, resolvedName)
                     cityLocationKeys.update { it + (cityKey(last.latitude, last.longitude, resolvedName) to null) }
-                    _currentLocationSelection.value = ResolvedLocationSelection(last.latitude, last.longitude, resolvedName)
+                    _currentLocationSelection.value = ResolvedLocationSelection(last.latitude, last.longitude, resolvedName, shortName)
                     loadWeather(last.latitude, last.longitude, resolvedName)
                     repo.saveLastLocation(last.latitude, last.longitude, resolvedName)
                     return@launch
@@ -148,8 +150,9 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
                 }
                 if (location != null) {
                     val resolvedName = resolveLocationName(location.latitude, location.longitude)
+                    val shortName = resolveLocationShortName(location.latitude, location.longitude, resolvedName)
                     cityLocationKeys.update { it + (cityKey(location.latitude, location.longitude, resolvedName) to null) }
-                    _currentLocationSelection.value = ResolvedLocationSelection(location.latitude, location.longitude, resolvedName)
+                    _currentLocationSelection.value = ResolvedLocationSelection(location.latitude, location.longitude, resolvedName, shortName)
                     loadWeather(location.latitude, location.longitude, resolvedName)
                     repo.saveLastLocation(location.latitude, location.longitude, resolvedName)
                 } else {
@@ -404,6 +407,25 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
                     ).firstOrNull()
                 }
         }.getOrNull()?.trim().orEmpty().ifBlank { "我的位置" }
+    }
+
+    private fun resolveLocationShortName(lat: Double, lon: Double, fallback: String): String {
+        return runCatching {
+            val address = geocoder.getFromLocation(lat, lon, 1)?.firstOrNull()
+            val street = listOfNotNull(address?.thoroughfare, address?.featureName)
+                .map { it.trim() }
+                .firstOrNull { it.isNotBlank() && !it.isAdministrativeDivision() }
+            val district = listOfNotNull(address?.subLocality, address?.subAdminArea, address?.locality)
+                .map { it.trim() }
+                .firstOrNull { it.isNotBlank() }
+
+            when {
+                !street.isNullOrBlank() && street.length <= 8 -> street
+                !district.isNullOrBlank() -> district
+                !street.isNullOrBlank() -> street
+                else -> fallback
+            }
+        }.getOrNull()?.ifBlank { fallback } ?: fallback
     }
 
     private fun String.isAdministrativeDivision(): Boolean {

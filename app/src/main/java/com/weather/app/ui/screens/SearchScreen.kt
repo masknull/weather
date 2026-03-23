@@ -24,10 +24,12 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import kotlin.math.roundToInt
 import com.weather.app.data.model.GeoLocation
 import com.weather.app.data.model.SavedCity
@@ -47,6 +49,7 @@ fun SearchScreen(
     val searchState by viewModel.searchState.collectAsState()
     val savedCities by viewModel.savedCities.collectAsState(emptyList())
     val hotCities by viewModel.hotCities.collectAsState()
+    val currentLocationSelection by viewModel.currentLocationSelection.collectAsState()
     var orderedSavedCities by remember { mutableStateOf(savedCities) }
     var draggingCityId by remember { mutableStateOf<Long?>(null) }
     var draggingStartIndex by remember { mutableStateOf<Int?>(null) }
@@ -210,7 +213,12 @@ fun SearchScreen(
                                     Text("推荐城市", color = TextSecondary, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                                     Spacer(Modifier.height(8.dp))
                                     HotCitiesGrid(
+                                        currentLocationName = currentLocationSelection?.shortName,
                                         cities = hotCities,
+                                        onCurrentLocationClick = {
+                                            onUseCurrentLocation()
+                                            viewModel.fetchCurrentLocation()
+                                        },
                                         onClick = { city ->
                                             viewModel.rememberCitySelection(city.latitude, city.longitude, city.displayName, locationKey = city.locationKey)
                                             onCitySelected(city.latitude, city.longitude, city.displayName)
@@ -290,20 +298,46 @@ fun LocationRow(location: GeoLocation, onClick: () -> Unit) {
 }
 
 @Composable
-fun HotCitiesGrid(cities: List<GeoLocation>, onClick: (GeoLocation) -> Unit) {
+fun HotCitiesGrid(
+    currentLocationName: String? = null,
+    cities: List<GeoLocation>,
+    onCurrentLocationClick: () -> Unit = {},
+    onClick: (GeoLocation) -> Unit
+) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        cities.chunked(3).forEach { row ->
+        val gridItems = buildList {
+            if (!currentLocationName.isNullOrBlank()) add(currentLocationName)
+            addAll(cities)
+        }
+        gridItems.chunked(3).forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                row.forEach { city ->
+                row.forEach { item ->
                     Box(
                         modifier = Modifier
                             .weight(1f)
                             .background(CardWhite, RoundedCornerShape(12.dp))
-                            .clickable { onClick(city) }
+                            .clickable {
+                                when (item) {
+                                    is GeoLocation -> onClick(item)
+                                    is String -> onCurrentLocationClick()
+                                }
+                            }
                             .padding(vertical = 12.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(city.name, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                        Text(
+                            text = when (item) {
+                                is GeoLocation -> item.name
+                                is String -> item
+                                else -> ""
+                            },
+                            color = Color.White,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(horizontal = 8.dp)
+                        )
                     }
                 }
                 repeat(3 - row.size) {
