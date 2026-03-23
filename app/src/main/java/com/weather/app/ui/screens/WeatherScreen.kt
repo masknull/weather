@@ -77,18 +77,6 @@ private fun parseCityKey(key: String?): Triple<Double, Double, String>? {
     return Triple(lat, lon, name)
 }
 
-private fun parseCityKey(key: String?): Triple<Double, Double, String>? {
-    if (key.isNullOrBlank()) return null
-    val firstComma = key.indexOf(',')
-    val secondComma = key.indexOf(',', firstComma + 1)
-    if (firstComma <= 0 || secondComma <= firstComma) return null
-    val lat = key.substring(0, firstComma).toDoubleOrNull() ?: return null
-    val lon = key.substring(firstComma + 1, secondComma).toDoubleOrNull() ?: return null
-    val name = key.substring(secondComma + 1)
-    if (name.isBlank()) return null
-    return Triple(lat, lon, name)
-}
-
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun WeatherScreen(
@@ -100,18 +88,10 @@ fun WeatherScreen(
     val uiState by viewModel.uiState.collectAsState()
     val cityStates by viewModel.cityStates.collectAsState()
     val savedCities by viewModel.savedCities.collectAsState()
-<<<<<<< HEAD
     val lastLocation by viewModel.lastLocation.collectAsState(initial = null)
 
     val parsedSelected = parseCityKey(selectedCityKey)
     val selectedTransientCity = if (parsedSelected != null) {
-=======
-    val scope = rememberCoroutineScope()
-
-    val parsedSelected = parseCityKey(selectedCityKey)
-    val selectedState = selectedCityKey?.let { cityStates[it] }
-    val selectedTransientCity = if (parsedSelected != null && selectedState is WeatherUiState.SuccessXiaomi) {
->>>>>>> e378689849c416f9f7af4653713dcec33357a9c8
         PagerCity(
             id = selectedCityKey.hashCode().toLong(),
             name = parsedSelected.third,
