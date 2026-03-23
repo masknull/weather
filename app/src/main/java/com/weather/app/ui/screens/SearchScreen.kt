@@ -26,8 +26,8 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.draw.shadow
 import kotlin.math.roundToInt
-import kotlin.math.roundToLong
 import com.weather.app.data.model.GeoLocation
 import com.weather.app.data.model.SavedCity
 import com.weather.app.ui.theme.*
@@ -327,7 +327,8 @@ fun SavedCityRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(if (isDragging) CardWhite.copy(alpha = 0.9f) else CardWhite, RoundedCornerShape(12.dp))
+            .shadow(if (isDragging) 2.dp else 0.dp, RoundedCornerShape(12.dp))
+            .background(CardWhite, RoundedCornerShape(12.dp))
             .padding(horizontal = 16.dp, vertical = 12.dp)
             .offset { IntOffset(0, dragOffsetY.roundToInt()) },
         verticalAlignment = Alignment.CenterVertically
@@ -337,6 +338,7 @@ fun SavedCityRow(
         Row(
             modifier = Modifier
                 .weight(1f)
+                .offset { if (isDragging) IntOffset(0, 0) else IntOffset.Zero }
                 .pointerInput(city.id) {
                     detectDragGesturesAfterLongPress(
                         onDragStart = { onDragStart() },

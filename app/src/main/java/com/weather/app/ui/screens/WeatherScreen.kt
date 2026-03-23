@@ -404,7 +404,7 @@ private fun XiaomiSuccessContent(
         ) {
             Text(xiaomiWeatherDesc(current?.weather), color = TextSecondary, fontSize = 16.sp)
             Text("${todayHigh}°↑", color = Color(0xFFFFD54F), fontSize = 15.sp)
-            Text("${todayLow}°↓", color = Color(0xFF90CAF9), fontSize = 15.sp)
+            Text("${todayLow}°↓", color = Color(0xFFCDEBFF), fontSize = 15.sp)
             if (aqiVal != null) Text("AQI $aqiVal $aqiLabel", color = when {
                 aqiVal <= 50 -> Color(0xFF66BB6A)
                 aqiVal <= 100 -> Color(0xFFFFCA28)

@@ -355,21 +355,52 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
     private fun resolveLocationName(lat: Double, lon: Double): String {
         return runCatching {
             val address = geocoder.getFromLocation(lat, lon, 1)?.firstOrNull()
+
+            fun sanitizeLocationPart(value: String?): String? {
+                var sanitized = value?.trim().orEmpty()
+                if (sanitized.isBlank()) return null
+                val prefixes = listOfNotNull(
+                    address?.adminArea,
+                    address?.subAdminArea,
+                    address?.locality,
+                    address?.subLocality
+                )
+                    .map { it.trim() }
+                    .filter { it.isNotBlank() && it.isAdministrativeDivision() }
+                    .sortedByDescending { it.length }
+                prefixes.forEach { prefix ->
+                    if (sanitized.startsWith(prefix)) {
+                        sanitized = sanitized.removePrefix(prefix).trim()
+                    }
+                }
+                return sanitized.ifBlank { null }
+            }
+
             buildList {
-                address?.thoroughfare?.takeIf { it.isNotBlank() && !it.isAdministrativeDivision() }?.let { add(it) }
-                address?.subThoroughfare?.takeIf { it.isNotBlank() && !it.isAdministrativeDivision() }?.let { add(it) }
-                address?.featureName?.takeIf { it.isNotBlank() && !it.isAdministrativeDivision() }?.let { add(it) }
-                address?.premises?.takeIf { it.isNotBlank() && !it.isAdministrativeDivision() }?.let { add(it) }
-                address?.subLocality?.takeIf { it.isNotBlank() && !it.isAdministrativeDivision() }?.let { add(it) }
+                sanitizeLocationPart(address?.thoroughfare)
+                    ?.takeIf { !it.isAdministrativeDivision() }
+                    ?.let { add(it) }
+                sanitizeLocationPart(address?.subThoroughfare)
+                    ?.takeIf { !it.isAdministrativeDivision() }
+                    ?.let { add(it) }
+                sanitizeLocationPart(address?.featureName)
+                    ?.takeIf { !it.isAdministrativeDivision() }
+                    ?.let { add(it) }
+                sanitizeLocationPart(address?.premises)
+                    ?.takeIf { !it.isAdministrativeDivision() }
+                    ?.let { add(it) }
+                sanitizeLocationPart(address?.subLocality)
+                    ?.takeIf { !it.isAdministrativeDivision() }
+                    ?.let { add(it) }
             }
                 .distinct()
                 .joinToString(separator = "")
                 .ifBlank {
                     listOfNotNull(
-                        address?.featureName?.takeIf { it.isNotBlank() && !it.isAdministrativeDivision() },
-                        address?.thoroughfare?.takeIf { it.isNotBlank() && !it.isAdministrativeDivision() },
-                        address?.subLocality?.takeIf { it.isNotBlank() && !it.isAdministrativeDivision() },
-                        address?.locality?.takeIf { it.isNotBlank() && !it.isAdministrativeDivision() }
+                        sanitizeLocationPart(address?.featureName)?.takeIf { !it.isAdministrativeDivision() },
+                        sanitizeLocationPart(address?.thoroughfare)?.takeIf { !it.isAdministrativeDivision() },
+                        sanitizeLocationPart(address?.subLocality)?.takeIf { !it.isAdministrativeDivision() },
+                        sanitizeLocationPart(address?.locality)?.takeIf { !it.isAdministrativeDivision() }
                     ).firstOrNull()
                 }
         }.getOrNull()?.trim().orEmpty().ifBlank { "我的位置" }
