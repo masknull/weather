@@ -15,6 +15,7 @@ import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material.Icon
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -126,34 +127,6 @@ fun SearchScreen(
             }
 
             Spacer(Modifier.height(12.dp))
-
-            // Quick entry: use current location
-            ElevatedCard(
-                onClick = {
-                    onUseCurrentLocation()
-                    viewModel.fetchCurrentLocation()
-                },
-                shape = RoundedCornerShape(12.dp),
-                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp),
-                colors = CardDefaults.elevatedCardColors(containerColor = CardWhite),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 11.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(Icons.Default.MyLocation, contentDescription = null, tint = Color.White)
-                    Spacer(Modifier.width(10.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text("使用当前位置", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-                        Spacer(Modifier.height(2.dp))
-                        Text("自动定位并查看天气", color = TextSecondary, fontSize = 12.sp)
-                    }
-                }
-            }
-
-            Spacer(Modifier.height(16.dp))
-
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -213,7 +186,7 @@ fun SearchScreen(
                                     Text("推荐城市", color = TextSecondary, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                                     Spacer(Modifier.height(8.dp))
                                     HotCitiesGrid(
-                                        currentLocationName = currentLocationSelection?.shortName,
+                                        currentLocationName = currentLocationSelection?.shortName ?: "当前位置",
                                         cities = hotCities,
                                         onCurrentLocationClick = {
                                             onUseCurrentLocation()
@@ -299,14 +272,14 @@ fun LocationRow(location: GeoLocation, onClick: () -> Unit) {
 
 @Composable
 fun HotCitiesGrid(
-    currentLocationName: String? = null,
+    currentLocationName: String = "当前位置",
     cities: List<GeoLocation>,
     onCurrentLocationClick: () -> Unit = {},
     onClick: (GeoLocation) -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         val gridItems = buildList {
-            if (!currentLocationName.isNullOrBlank()) add(currentLocationName)
+            add(currentLocationName)
             addAll(cities)
         }
         gridItems.chunked(3).forEach { row ->
@@ -325,19 +298,33 @@ fun HotCitiesGrid(
                             .padding(vertical = 12.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = when (item) {
-                                is GeoLocation -> item.name
-                                is String -> item
-                                else -> ""
-                            },
-                            color = Color.White,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.padding(horizontal = 8.dp)
-                        )
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            if (item is String) {
+                                Icon(
+                                    imageVector = Icons.Default.MyLocation,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(Modifier.width(4.dp))
+                            }
+                            Text(
+                                text = when (item) {
+                                    is GeoLocation -> item.name
+                                    is String -> item
+                                    else -> ""
+                                },
+                                color = Color.White,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     }
                 }
                 repeat(3 - row.size) {
@@ -359,7 +346,7 @@ fun SavedCityRow(
     onDrag: (Float) -> Unit,
     onDragEnd: () -> Unit
 ) {
-    Row(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .zIndex(if (isDragging) 1f else 0f)
@@ -381,16 +368,21 @@ fun SavedCityRow(
                 )
             }
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(Icons.Default.Bookmark, contentDescription = null, tint = SunYellow, modifier = Modifier.size(18.dp))
-        Spacer(Modifier.width(12.dp))
-        Text(city.name, color = Color.White, fontSize = 15.sp, modifier = Modifier.weight(1f))
-        Text("长按拖动", color = TextSecondary, fontSize = 11.sp)
-        Spacer(Modifier.width(8.dp))
-        IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
-            Icon(Icons.Default.Delete, contentDescription = "删除", tint = TextSecondary, modifier = Modifier.size(16.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(Icons.Default.Bookmark, contentDescription = null, tint = SunYellow, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(12.dp))
+            Text(city.name, color = Color.White, fontSize = 15.sp, modifier = Modifier.weight(1f))
+            Text("长按拖动", color = TextSecondary, fontSize = 11.sp, maxLines = 1)
+            Spacer(Modifier.width(8.dp))
+            IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
+                Icon(Icons.Default.Delete, contentDescription = "删除", tint = TextSecondary, modifier = Modifier.size(16.dp))
+            }
         }
     }
 }
