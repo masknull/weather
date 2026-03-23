@@ -41,14 +41,15 @@ class WeatherRepository(private val context: Context) {
                     name = it.name ?: query,
                     latitude = it.latitude?.toDoubleOrNull() ?: 0.0,
                     longitude = it.longitude?.toDoubleOrNull() ?: 0.0,
+                    locationKey = it.locationKey,
                     country = it.affiliation,
                     region = null
                 )
             }
     }
 
-    suspend fun getXiaomiWeather(lat: Double, lon: Double): Result<XiaomiWeatherResponse> = runCatching {
-        XiaomiWeatherApi.getAll(lat, lon)
+    suspend fun getXiaomiWeather(lat: Double, lon: Double, locationKey: String? = null): Result<XiaomiWeatherResponse> = runCatching {
+        XiaomiWeatherApi.getAll(lat, lon, locationKey = locationKey)
     }
 
     // ── Persistence ───────────────────────────────────────────────────────
@@ -109,8 +110,9 @@ data class SavedCityDto(
     val region: String? = null,
     val country: String? = null,
     val latitude: Double,
-    val longitude: Double
+    val longitude: Double,
+    val locationKey: String? = null
 )
 
-fun SavedCity.toDto() = SavedCityDto(id, name, region, country, latitude, longitude)
-fun SavedCityDto.toSavedCity() = SavedCity(id, name, region, country, latitude, longitude)
+fun SavedCity.toDto() = SavedCityDto(id, name, region, country, latitude, longitude, locationKey)
+fun SavedCityDto.toSavedCity() = SavedCity(id, name, region, country, latitude, longitude, locationKey)

@@ -20,11 +20,12 @@ object XiaomiWeatherApi {
         isLenient = true
     }
 
-    suspend fun getAll(lat: Double, lon: Double, days: Int = 15): XiaomiWeatherResponse {
+    suspend fun getAll(lat: Double, lon: Double, days: Int = 15, locationKey: String? = null): XiaomiWeatherResponse {
         val text = WeatherApi.client.get("$BASE/all") {
             parameter("latitude", String.format("%.2f", lat))
             parameter("longitude", String.format("%.2f", lon))
             parameter("isLocated", "true")
+            if (!locationKey.isNullOrBlank()) parameter("locationKey", locationKey)
             parameter("days", days)
             parameter("appKey", "weather20151024")
             parameter("sign", "zUFJoAR2ZVrDy1vF3D07")

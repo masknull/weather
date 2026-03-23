@@ -133,7 +133,7 @@ fun SearchScreen(
                                 SavedCityRow(
                                     city = city,
                                     onClick = {
-                                        viewModel.loadCity(city.latitude, city.longitude, city.name)
+                                        viewModel.loadCity(city.latitude, city.longitude, city.name, locationKey = city.locationKey)
                                         onCitySelected(city.latitude, city.longitude, city.name)
                                     },
                                     onDelete = { viewModel.removeSavedCity(city.id) }
@@ -160,7 +160,7 @@ fun SearchScreen(
                         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             items(state.locations) { loc ->
                                 LocationRow(loc) {
-                                    viewModel.loadCity(loc.latitude, loc.longitude, loc.displayName)
+                                    viewModel.loadCity(loc.latitude, loc.longitude, loc.displayName, locationKey = loc.locationKey)
                                     onCitySelected(loc.latitude, loc.longitude, loc.displayName)
                                 }
                             }

@@ -16,6 +16,7 @@ data class GeoLocation(
     val name: String,
     val latitude: Double,
     val longitude: Double,
+    val locationKey: String? = null,
     val country: String? = null,
     @SerialName("admin1") val region: String? = null,
     @SerialName("country_code") val countryCode: String? = null
@@ -96,10 +97,11 @@ data class SavedCity(
     val region: String?,
     val country: String?,
     val latitude: Double,
-    val longitude: Double
+    val longitude: Double,
+    val locationKey: String? = null
 )
 
 fun GeoLocation.toSavedCity() = SavedCity(
     id = id, name = name, region = region,
-    country = country, latitude = latitude, longitude = longitude
+    country = country, latitude = latitude, longitude = longitude, locationKey = locationKey
 )

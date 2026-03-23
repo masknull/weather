@@ -41,6 +41,8 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
     private fun cityKey(lat: Double, lon: Double, name: String): String =
         "${String.format("%.4f", lat)},${String.format("%.4f", lon)},$name"
 
+    private val cityLocationKeys = MutableStateFlow<Map<String, String?>>(emptyMap())
+
     private val repo = WeatherRepository(application)
     private val fusedLocation = LocationServices.getFusedLocationProviderClient(application)
     private var permissionLauncher: ((Array<String>) -> Unit)? = null
@@ -135,8 +137,9 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    fun loadCity(lat: Double, lon: Double, name: String, saveAsLast: Boolean = true) {
+    fun loadCity(lat: Double, lon: Double, name: String, saveAsLast: Boolean = true, locationKey: String? = null) {
         viewModelScope.launch {
+            cityLocationKeys.update { it + (cityKey(lat, lon, name) to locationKey) }
             loadWeather(lat, lon, name)
             if (saveAsLast) repo.saveLastLocation(lat, lon, name)
         }
@@ -274,7 +277,7 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
         _cityStates.update { it + (key to WeatherUiState.Loading) }
         currentLat = lat
         currentLon = lon
-        repo.getXiaomiWeather(lat, lon).fold(
+        repo.getXiaomiWeather(lat, lon, cityLocationKeys.value[key]).fold(
             onSuccess = {
                 val success = WeatherUiState.SuccessXiaomi(name, it)
                 _uiState.value = success
