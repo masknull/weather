@@ -99,6 +99,12 @@ class WeatherRepository(private val context: Context) {
         }
     }
 
+    suspend fun replaceCities(cities: List<SavedCity>) {
+        context.dataStore.edit { prefs ->
+            prefs[KEY_SAVED_CITIES] = json.encodeToString(cities.map { it.toDto() })
+        }
+    }
+
     suspend fun saveLastLocation(lat: Double, lon: Double, cityName: String) {
         context.dataStore.edit { prefs ->
             prefs[KEY_LAST_LAT] = lat.toString()

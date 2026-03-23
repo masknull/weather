@@ -2,13 +2,12 @@ package com.weather.app.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
@@ -18,12 +17,15 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.math.roundToInt
 import com.weather.app.data.model.GeoLocation
 import com.weather.app.data.model.SavedCity
 import com.weather.app.ui.theme.*
@@ -42,6 +44,9 @@ fun SearchScreen(
     val searchState by viewModel.searchState.collectAsState()
     val savedCities by viewModel.savedCities.collectAsState(emptyList())
     val hotCities by viewModel.hotCities.collectAsState()
+    var orderedSavedCities by remember(savedCities) { mutableStateOf(savedCities) }
+    var draggingCityId by remember { mutableStateOf<Long?>(null) }
+    var draggingOffsetY by remember { mutableStateOf(0f) }
     val isRefreshing = searchState is SearchState.Loading && searchQuery.isBlank()
     val pullRefreshState = rememberPullRefreshState(
         refreshing = isRefreshing,
@@ -149,18 +154,43 @@ fun SearchScreen(
                                     Text("已保存城市", color = TextSecondary, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                                     Spacer(Modifier.height(8.dp))
                                 }
-                                items(savedCities) { city ->
+                                itemsIndexed(orderedSavedCities, key = { _, city -> city.id }) { index, city ->
                                     SavedCityRow(
                                         city = city,
-                                        canMoveUp = savedCities.indexOf(city) > 0,
-                                        canMoveDown = savedCities.indexOf(city) < savedCities.lastIndex,
                                         onClick = {
                                             viewModel.rememberCitySelection(city.latitude, city.longitude, city.name, locationKey = city.locationKey)
                                             onCitySelected(city.latitude, city.longitude, city.name)
                                         },
                                         onDelete = { viewModel.removeSavedCity(city.id) },
-                                        onMoveUp = { viewModel.moveSavedCity(city.id, -1) },
-                                        onMoveDown = { viewModel.moveSavedCity(city.id, 1) }
+                                        isDragging = draggingCityId == city.id,
+                                        dragOffsetY = if (draggingCityId == city.id) draggingOffsetY else 0f,
+                                        onDragStart = {
+                                            draggingCityId = city.id
+                                            draggingOffsetY = 0f
+                                        },
+                                        onDrag = { deltaY ->
+                                            draggingOffsetY += deltaY
+                                            val threshold = 72f
+                                            when {
+                                                draggingOffsetY > threshold && index < orderedSavedCities.lastIndex -> {
+                                                    orderedSavedCities = orderedSavedCities.toMutableList().also {
+                                                        java.util.Collections.swap(it, index, index + 1)
+                                                    }
+                                                    draggingOffsetY -= threshold
+                                                }
+                                                draggingOffsetY < -threshold && index > 0 -> {
+                                                    orderedSavedCities = orderedSavedCities.toMutableList().also {
+                                                        java.util.Collections.swap(it, index, index - 1)
+                                                    }
+                                                    draggingOffsetY += threshold
+                                                }
+                                            }
+                                        },
+                                        onDragEnd = {
+                                            draggingCityId = null
+                                            draggingOffsetY = 0f
+                                            viewModel.reorderSavedCities(orderedSavedCities)
+                                        }
                                     )
                                 }
                             }
@@ -277,30 +307,39 @@ fun HotCitiesGrid(cities: List<GeoLocation>, onClick: (GeoLocation) -> Unit) {
 @Composable
 fun SavedCityRow(
     city: SavedCity,
-    canMoveUp: Boolean,
-    canMoveDown: Boolean,
     onClick: () -> Unit,
     onDelete: () -> Unit,
-    onMoveUp: () -> Unit,
-    onMoveDown: () -> Unit
+    isDragging: Boolean,
+    dragOffsetY: Float,
+    onDragStart: () -> Unit,
+    onDrag: (Float) -> Unit,
+    onDragEnd: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .offset { IntOffset(0, dragOffsetY.roundToInt()) }
+            .pointerInput(city.id) {
+                detectDragGesturesAfterLongPress(
+                    onDragStart = { onDragStart() },
+                    onDragEnd = { onDragEnd() },
+                    onDragCancel = { onDragEnd() },
+                    onDrag = { change, dragAmount ->
+                        change.consume()
+                        onDrag(dragAmount.y)
+                    }
+                )
+            }
             .clickable(onClick = onClick)
-            .background(CardWhite, RoundedCornerShape(12.dp))
+            .background(if (isDragging) CardWhite.copy(alpha = 0.9f) else CardWhite, RoundedCornerShape(12.dp))
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(Icons.Default.Bookmark, contentDescription = null, tint = SunYellow, modifier = Modifier.size(18.dp))
         Spacer(Modifier.width(12.dp))
         Text(city.name, color = Color.White, fontSize = 15.sp, modifier = Modifier.weight(1f))
-        IconButton(onClick = onMoveUp, enabled = canMoveUp, modifier = Modifier.size(32.dp)) {
-            Icon(Icons.Default.ArrowUpward, contentDescription = "上移", tint = if (canMoveUp) TextSecondary else TextSecondary.copy(alpha = 0.4f), modifier = Modifier.size(16.dp))
-        }
-        IconButton(onClick = onMoveDown, enabled = canMoveDown, modifier = Modifier.size(32.dp)) {
-            Icon(Icons.Default.ArrowDownward, contentDescription = "下移", tint = if (canMoveDown) TextSecondary else TextSecondary.copy(alpha = 0.4f), modifier = Modifier.size(16.dp))
-        }
+        Text("长按拖动", color = TextSecondary, fontSize = 11.sp)
+        Spacer(Modifier.width(8.dp))
         IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
             Icon(Icons.Default.Delete, contentDescription = "删除", tint = TextSecondary, modifier = Modifier.size(16.dp))
         }

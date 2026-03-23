@@ -231,6 +231,10 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch { repo.moveCity(cityId, direction) }
     }
 
+    fun reorderSavedCities(cities: List<SavedCity>) {
+        viewModelScope.launch { repo.replaceCities(cities) }
+    }
+
     fun removeCurrentCity() {
         val lat = currentLat
         val lon = currentLon
