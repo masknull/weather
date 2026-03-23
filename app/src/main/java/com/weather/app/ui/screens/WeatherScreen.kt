@@ -124,6 +124,8 @@ fun WeatherScreen(
         buildList {
             if (selectedTransientCity != null && savedCities.none { buildCityKey(it.latitude, it.longitude, it.name) == selectedCityKey }) {
                 add(selectedTransientCity)
+            } else if (fallbackCity != null && savedCities.none { buildCityKey(it.latitude, it.longitude, it.name) == fallbackCity.key }) {
+                add(fallbackCity)
             }
             addAll(savedCities.map {
                 PagerCity(
@@ -134,9 +136,6 @@ fun WeatherScreen(
                     isCurrent = false
                 )
             })
-            if (fallbackCity != null && savedCities.none { buildCityKey(it.latitude, it.longitude, it.name) == fallbackCity.key }) {
-                add(fallbackCity)
-            }
         }.distinctBy { it.key }
     }
 
