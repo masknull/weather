@@ -27,6 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.roundToInt
+import kotlin.math.roundToLong
 import com.weather.app.data.model.GeoLocation
 import com.weather.app.data.model.SavedCity
 import com.weather.app.ui.theme.*
@@ -45,8 +46,9 @@ fun SearchScreen(
     val searchState by viewModel.searchState.collectAsState()
     val savedCities by viewModel.savedCities.collectAsState(emptyList())
     val hotCities by viewModel.hotCities.collectAsState()
-    var orderedSavedCities by remember(savedCities) { mutableStateOf(savedCities) }
+    var orderedSavedCities by remember { mutableStateOf(savedCities) }
     var draggingCityId by remember { mutableStateOf<Long?>(null) }
+    var draggingStartIndex by remember { mutableStateOf<Int?>(null) }
     var draggingOffsetY by remember { mutableStateOf(0f) }
     val isRefreshing = searchState is SearchState.Loading && searchQuery.isBlank()
     val pullRefreshState = rememberPullRefreshState(
@@ -60,6 +62,12 @@ fun SearchScreen(
     LaunchedEffect(Unit) {
         viewModel.clearSearch()
         viewModel.loadHotCities()
+    }
+
+    LaunchedEffect(savedCities) {
+        if (draggingCityId == null) {
+            orderedSavedCities = savedCities
+        }
     }
 
     Box(
@@ -167,30 +175,30 @@ fun SearchScreen(
                                         dragOffsetY = if (draggingCityId == city.id) draggingOffsetY else 0f,
                                         onDragStart = {
                                             draggingCityId = city.id
+                                            draggingStartIndex = index
                                             draggingOffsetY = 0f
                                         },
                                         onDrag = { deltaY ->
                                             draggingOffsetY += deltaY
-                                            val threshold = 84f
-                                            when {
-                                                draggingOffsetY > threshold && index < orderedSavedCities.lastIndex -> {
-                                                    orderedSavedCities = orderedSavedCities.toMutableList().also {
-                                                        java.util.Collections.swap(it, index, index + 1)
-                                                    }
-                                                    draggingOffsetY -= threshold
-                                                }
-                                                draggingOffsetY < -threshold && index > 0 -> {
-                                                    orderedSavedCities = orderedSavedCities.toMutableList().also {
-                                                        java.util.Collections.swap(it, index, index - 1)
-                                                    }
-                                                    draggingOffsetY += threshold
-                                                }
-                                            }
                                         },
                                         onDragEnd = {
+                                            val startIndex = draggingStartIndex
+                                            if (startIndex != null && orderedSavedCities.isNotEmpty()) {
+                                                val itemHeightPx = 84f
+                                                val move = (draggingOffsetY / itemHeightPx).roundToInt()
+                                                val targetIndex = (startIndex + move)
+                                                    .coerceIn(0, orderedSavedCities.lastIndex)
+                                                if (targetIndex != startIndex) {
+                                                    orderedSavedCities = orderedSavedCities.toMutableList().also {
+                                                        val item = it.removeAt(startIndex)
+                                                        it.add(targetIndex, item)
+                                                    }
+                                                    viewModel.reorderSavedCities(orderedSavedCities)
+                                                }
+                                            }
                                             draggingCityId = null
+                                            draggingStartIndex = null
                                             draggingOffsetY = 0f
-                                            viewModel.reorderSavedCities(orderedSavedCities)
                                         }
                                     )
                                 }
