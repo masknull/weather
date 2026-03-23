@@ -125,7 +125,10 @@ fun WeatherScreen(
         val city = pagerCities.getOrNull(pagerState.settledPage)
         if (city != null) {
             onSelectedCityChange(city.key)
-            viewModel.loadCity(city.latitude, city.longitude, city.name, saveAsLast = false)
+            val current = cityStates[city.key]
+            if (current !is WeatherUiState.SuccessXiaomi && current !is WeatherUiState.Loading) {
+                viewModel.loadCity(city.latitude, city.longitude, city.name, saveAsLast = false)
+            }
         }
     }
 

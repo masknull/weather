@@ -115,7 +115,6 @@ class MainActivity : ComponentActivity() {
                     val ll = lastLocation
                     if (ll != null && route == "home") {
                         selectedCityKey = "${String.format("%.4f", ll.first)},${String.format("%.4f", ll.second)},${ll.third}"
-                        viewModel.loadCity(ll.first, ll.second, ll.third)
                         route = "weather"
                     } else if (ll != null && route == "search" && pendingUseCurrentLocation) {
                         selectedCityKey = "${String.format("%.4f", ll.first)},${String.format("%.4f", ll.second)},${ll.third}"
