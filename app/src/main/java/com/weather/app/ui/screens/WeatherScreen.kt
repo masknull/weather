@@ -25,6 +25,10 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.ui.graphics.Path as GPath
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
@@ -37,7 +41,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.Modifier
@@ -77,7 +83,7 @@ private fun parseCityKey(key: String?): Triple<Double, Double, String>? {
     return Triple(lat, lon, name)
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalMaterialApi::class)
 @Composable
 fun WeatherScreen(
     viewModel: WeatherViewModel,
@@ -178,11 +184,27 @@ fun WeatherScreen(
         val pageState = pageCity?.let { city ->
             cityStates[city.key]
         } ?: if (page == pagerState.settledPage) uiState else WeatherUiState.Idle
+        var isRefreshing by remember(pageCity?.key) { mutableStateOf(false) }
+        val pullRefreshState = rememberPullRefreshState(
+            refreshing = isRefreshing,
+            onRefresh = {
+                val city = pageCity ?: return@rememberPullRefreshState
+                isRefreshing = true
+                viewModel.refreshCity(city.latitude, city.longitude, city.name)
+            }
+        )
+
+        LaunchedEffect(pageState) {
+            if (isRefreshing && pageState !is WeatherUiState.Loading) {
+                isRefreshing = false
+            }
+        }
 
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(gradient)
+                .pullRefresh(pullRefreshState)
         ) {
             AnimatedContent(
                 targetState = pageState,
@@ -203,6 +225,15 @@ fun WeatherScreen(
                     is WeatherUiState.Error -> ErrorContent(state.message) { viewModel.retry() }
                 }
             }
+            PullRefreshIndicator(
+                refreshing = isRefreshing,
+                state = pullRefreshState,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .statusBarsPadding(),
+                backgroundColor = CardWhite,
+                contentColor = Color.White
+            )
         }
     }
 }

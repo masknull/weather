@@ -348,17 +348,21 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
         return runCatching {
             val address = geocoder.getFromLocation(lat, lon, 1)?.firstOrNull()
             buildList {
-                address?.locality?.takeIf { it.isNotBlank() }?.let { add(it) }
-                address?.subLocality?.takeIf { it.isNotBlank() }?.let { add(it) }
                 address?.thoroughfare?.takeIf { it.isNotBlank() }?.let { add(it) }
                 address?.subThoroughfare?.takeIf { it.isNotBlank() }?.let { add(it) }
                 address?.featureName?.takeIf { it.isNotBlank() }?.let { add(it) }
-                address?.subAdminArea?.takeIf { it.isNotBlank() }?.let { add(it) }
-                address?.adminArea?.takeIf { it.isNotBlank() }?.let { add(it) }
+                address?.premises?.takeIf { it.isNotBlank() }?.let { add(it) }
+                address?.subLocality?.takeIf { it.isNotBlank() }?.let { add(it) }
             }
                 .distinct()
                 .joinToString(separator = "")
-                .ifBlank { null }
+                .ifBlank {
+                    listOfNotNull(
+                        address?.subLocality?.takeIf { it.isNotBlank() },
+                        address?.featureName?.takeIf { it.isNotBlank() },
+                        address?.locality?.takeIf { it.isNotBlank() }
+                    ).firstOrNull()
+                }
         }.getOrNull()?.trim().orEmpty().ifBlank { "我的位置" }
     }
 }
