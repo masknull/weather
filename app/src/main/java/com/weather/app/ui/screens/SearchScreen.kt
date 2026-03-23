@@ -10,10 +10,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.*
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,7 +42,13 @@ fun SearchScreen(
     val savedCities by viewModel.savedCities.collectAsState(emptyList())
     val hotCities by viewModel.hotCities.collectAsState()
     val isRefreshing = searchState is SearchState.Loading && searchQuery.isBlank()
-    val pullRefreshState = rememberPullToRefreshState()
+    val pullRefreshState = rememberPullRefreshState(
+        refreshing = isRefreshing,
+        onRefresh = {
+            viewModel.clearSearch()
+            viewModel.loadHotCities()
+        }
+    )
 
     LaunchedEffect(Unit) {
         viewModel.clearSearch()
@@ -128,14 +135,10 @@ fun SearchScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            PullToRefreshBox(
-                isRefreshing = isRefreshing,
-                onRefresh = {
-                    viewModel.clearSearch()
-                    viewModel.loadHotCities()
-                },
-                state = pullRefreshState,
-                modifier = Modifier.fillMaxSize()
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pullRefresh(pullRefreshState)
             ) {
                 when (val state = searchState) {
                     is SearchState.Idle -> {
@@ -217,6 +220,13 @@ fun SearchScreen(
                         }
                     }
                 }
+                PullRefreshIndicator(
+                    refreshing = isRefreshing,
+                    state = pullRefreshState,
+                    modifier = Modifier.align(Alignment.TopCenter),
+                    backgroundColor = CardWhite,
+                    contentColor = Color.White
+                )
             }
         }
     }
