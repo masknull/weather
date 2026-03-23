@@ -18,6 +18,8 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -26,7 +28,6 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.draw.shadow
 import kotlin.math.roundToInt
 import com.weather.app.data.model.GeoLocation
 import com.weather.app.data.model.SavedCity
@@ -327,35 +328,32 @@ fun SavedCityRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .zIndex(if (isDragging) 1f else 0f)
             .shadow(if (isDragging) 2.dp else 0.dp, RoundedCornerShape(12.dp))
             .background(CardWhite, RoundedCornerShape(12.dp))
-            .padding(horizontal = 16.dp, vertical = 12.dp)
-            .offset { IntOffset(0, dragOffsetY.roundToInt()) },
+            .graphicsLayer {
+                translationY = dragOffsetY
+                alpha = 1f
+            }
+            .pointerInput(city.id) {
+                detectDragGesturesAfterLongPress(
+                    onDragStart = { onDragStart() },
+                    onDragEnd = { onDragEnd() },
+                    onDragCancel = { onDragEnd() },
+                    onDrag = { change, dragAmount ->
+                        change.consume()
+                        onDrag(dragAmount.y)
+                    }
+                )
+            }
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(Icons.Default.Bookmark, contentDescription = null, tint = SunYellow, modifier = Modifier.size(18.dp))
         Spacer(Modifier.width(12.dp))
-        Row(
-            modifier = Modifier
-                .weight(1f)
-                .offset { if (isDragging) IntOffset(0, 0) else IntOffset.Zero }
-                .pointerInput(city.id) {
-                    detectDragGesturesAfterLongPress(
-                        onDragStart = { onDragStart() },
-                        onDragEnd = { onDragEnd() },
-                        onDragCancel = { onDragEnd() },
-                        onDrag = { change, dragAmount ->
-                            change.consume()
-                            onDrag(dragAmount.y)
-                        }
-                    )
-                }
-                .clickable(onClick = onClick),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(city.name, color = Color.White, fontSize = 15.sp, modifier = Modifier.weight(1f))
-            Text("长按拖动", color = TextSecondary, fontSize = 11.sp)
-        }
+        Text(city.name, color = Color.White, fontSize = 15.sp, modifier = Modifier.weight(1f))
+        Text("长按拖动", color = TextSecondary, fontSize = 11.sp)
         Spacer(Modifier.width(8.dp))
         IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
             Icon(Icons.Default.Delete, contentDescription = "删除", tint = TextSecondary, modifier = Modifier.size(16.dp))
