@@ -25,7 +25,6 @@ object XiaomiWeatherApi {
             parameter("latitude", String.format("%.2f", lat))
             parameter("longitude", String.format("%.2f", lon))
             parameter("isLocated", "true")
-            parameter("locationKey", "weathercn:101210606")
             parameter("days", days)
             parameter("appKey", "weather20151024")
             parameter("sign", "zUFJoAR2ZVrDy1vF3D07")
