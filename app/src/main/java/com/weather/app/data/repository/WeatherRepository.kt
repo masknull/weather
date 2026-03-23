@@ -31,21 +31,16 @@ class WeatherRepository(private val context: Context) {
     // ── Network ───────────────────────────────────────────────────────────
 
     suspend fun searchCity(query: String): Result<List<GeoLocation>> = runCatching {
-        // Use Xiaomi location search to keep the whole stack consistent with Xiaomi weather API
         val items = com.weather.app.data.remote.XiaomiLocationApi.searchCity(query)
         items
             .filter { (it.latitude?.toDoubleOrNull() ?: 0.0) != 0.0 && (it.longitude?.toDoubleOrNull() ?: 0.0) != 0.0 }
-            .map {
-                GeoLocation(
-                    id = (it.locationKey ?: it.key ?: it.name ?: query).hashCode().toLong(),
-                    name = it.name ?: query,
-                    latitude = it.latitude?.toDoubleOrNull() ?: 0.0,
-                    longitude = it.longitude?.toDoubleOrNull() ?: 0.0,
-                    locationKey = it.locationKey,
-                    country = it.affiliation,
-                    region = null
-                )
-            }
+            .map { it.toGeoLocation(query) }
+    }
+
+    suspend fun getHotCities(): Result<List<GeoLocation>> = runCatching {
+        com.weather.app.data.remote.XiaomiLocationApi.hotCities()
+            .filter { (it.latitude?.toDoubleOrNull() ?: 0.0) != 0.0 && (it.longitude?.toDoubleOrNull() ?: 0.0) != 0.0 }
+            .map { it.toGeoLocation(it.name ?: "热门城市") }
     }
 
     suspend fun getXiaomiWeather(lat: Double, lon: Double, locationKey: String? = null): Result<XiaomiWeatherResponse> = runCatching {
@@ -116,3 +111,13 @@ data class SavedCityDto(
 
 fun SavedCity.toDto() = SavedCityDto(id, name, region, country, latitude, longitude, locationKey)
 fun SavedCityDto.toSavedCity() = SavedCity(id, name, region, country, latitude, longitude, locationKey)
+
+private fun com.weather.app.data.model.XiaomiCitySearchItem.toGeoLocation(fallbackName: String) = GeoLocation(
+    id = (locationKey ?: key ?: name ?: fallbackName).hashCode().toLong(),
+    name = name ?: fallbackName,
+    latitude = latitude?.toDoubleOrNull() ?: 0.0,
+    longitude = longitude?.toDoubleOrNull() ?: 0.0,
+    locationKey = locationKey,
+    country = affiliation,
+    region = null
+)

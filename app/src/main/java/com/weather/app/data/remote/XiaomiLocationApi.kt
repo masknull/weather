@@ -19,4 +19,11 @@ object XiaomiLocationApi {
             parameter("isGlobal", "false")
             parameter("locale", "zh_cn")
         }.body()
+
+    suspend fun hotCities(): List<XiaomiCitySearchItem> =
+        WeatherApi.client.get("$BASE/hots") {
+            parameter("locale", "zh_cn")
+            parameter("appKey", "weather20151024")
+            parameter("sign", "zUFJoAR2ZVrDy1vF3D07")
+        }.body()
 }

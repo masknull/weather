@@ -37,10 +37,12 @@ fun SearchScreen(
     val searchQuery by viewModel.searchQuery.collectAsState()
     val searchState by viewModel.searchState.collectAsState()
     val savedCities by viewModel.savedCities.collectAsState(emptyList())
+    val hotCities by viewModel.hotCities.collectAsState()
     val focusRequester = remember { FocusRequester() }
 
     LaunchedEffect(Unit) {
         viewModel.clearSearch()
+        viewModel.loadHotCities()
     }
 
     Box(
@@ -125,10 +127,12 @@ fun SearchScreen(
 
             when (val state = searchState) {
                 is SearchState.Idle -> {
-                    if (savedCities.isNotEmpty()) {
-                        Text("已保存城市", color = TextSecondary, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                        Spacer(Modifier.height(8.dp))
-                        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        if (savedCities.isNotEmpty()) {
+                            item {
+                                Text("已保存城市", color = TextSecondary, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                                Spacer(Modifier.height(8.dp))
+                            }
                             items(savedCities) { city ->
                                 SavedCityRow(
                                     city = city,
@@ -140,9 +144,26 @@ fun SearchScreen(
                                 )
                             }
                         }
-                    } else {
-                        Box(Modifier.fillMaxWidth().padding(top = 48.dp), contentAlignment = Alignment.Center) {
-                            Text("先搜索一个城市开始使用", color = TextSecondary)
+                        if (hotCities.isNotEmpty()) {
+                            item {
+                                Spacer(Modifier.height(if (savedCities.isNotEmpty()) 8.dp else 0.dp))
+                                Text("推荐城市", color = TextSecondary, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                                Spacer(Modifier.height(8.dp))
+                                HotCitiesGrid(
+                                    cities = hotCities,
+                                    onClick = { city ->
+                                        viewModel.loadCity(city.latitude, city.longitude, city.displayName, locationKey = city.locationKey)
+                                        onCitySelected(city.latitude, city.longitude, city.displayName)
+                                    }
+                                )
+                            }
+                        }
+                        if (savedCities.isEmpty() && hotCities.isEmpty()) {
+                            item {
+                                Box(Modifier.fillMaxWidth().padding(top = 48.dp), contentAlignment = Alignment.Center) {
+                                    Text("先搜索一个城市开始使用", color = TextSecondary)
+                                }
+                            }
                         }
                     }
                 }
@@ -190,6 +211,32 @@ fun LocationRow(location: GeoLocation, onClick: () -> Unit) {
         Icon(Icons.Default.LocationOn, contentDescription = null, tint = SkyBlue, modifier = Modifier.size(20.dp))
         Spacer(Modifier.width(12.dp))
         Text(location.displayName, color = Color.White, fontSize = 15.sp)
+    }
+}
+
+@Composable
+@Composable
+fun HotCitiesGrid(cities: List<GeoLocation>, onClick: (GeoLocation) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        cities.chunked(3).forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                row.forEach { city ->
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .background(CardWhite, RoundedCornerShape(12.dp))
+                            .clickable { onClick(city) }
+                            .padding(vertical = 12.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(city.name, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                    }
+                }
+                repeat(3 - row.size) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
+        }
     }
 }
 

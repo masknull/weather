@@ -66,6 +66,9 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
+    private val _hotCities = MutableStateFlow<List<GeoLocation>>(emptyList())
+    val hotCities: StateFlow<List<GeoLocation>> = _hotCities.asStateFlow()
+
     val savedCities: StateFlow<List<SavedCity>> = repo.savedCities
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -245,6 +248,15 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
     fun clearSearch() {
         _searchQuery.value = ""
         _searchState.value = SearchState.Idle
+    }
+
+    fun loadHotCities() {
+        viewModelScope.launch {
+            repo.getHotCities().fold(
+                onSuccess = { _hotCities.value = it },
+                onFailure = { _hotCities.value = emptyList() }
+            )
+        }
     }
 
     private fun searchCity(query: String) {
