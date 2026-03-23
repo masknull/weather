@@ -66,6 +66,18 @@ private data class PagerCity(
     val key: String get() = "${String.format("%.4f", latitude)},${String.format("%.4f", longitude)},$name"
 }
 
+private fun parseCityKey(key: String?): Triple<Double, Double, String>? {
+    if (key.isNullOrBlank()) return null
+    val firstComma = key.indexOf(',')
+    val secondComma = key.indexOf(',', firstComma + 1)
+    if (firstComma <= 0 || secondComma <= firstComma) return null
+    val lat = key.substring(0, firstComma).toDoubleOrNull() ?: return null
+    val lon = key.substring(firstComma + 1, secondComma).toDoubleOrNull() ?: return null
+    val name = key.substring(secondComma + 1)
+    if (name.isBlank()) return null
+    return Triple(lat, lon, name)
+}
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun WeatherScreen(
@@ -77,16 +89,16 @@ fun WeatherScreen(
     val uiState by viewModel.uiState.collectAsState()
     val cityStates by viewModel.cityStates.collectAsState()
     val savedCities by viewModel.savedCities.collectAsState()
-    val lastLocation by viewModel.lastLocation.collectAsState()
     val scope = rememberCoroutineScope()
 
+    val parsedSelected = parseCityKey(selectedCityKey)
     val selectedState = selectedCityKey?.let { cityStates[it] }
-    val selectedTransientCity = if (selectedState is WeatherUiState.SuccessXiaomi) {
+    val selectedTransientCity = if (parsedSelected != null && selectedState is WeatherUiState.SuccessXiaomi) {
         PagerCity(
             id = selectedCityKey.hashCode().toLong(),
-            name = selectedState.cityName,
-            latitude = lastLocation?.first ?: 0.0,
-            longitude = lastLocation?.second ?: 0.0,
+            name = parsedSelected.third,
+            latitude = parsedSelected.first,
+            longitude = parsedSelected.second,
             isCurrent = true
         )
     } else null
